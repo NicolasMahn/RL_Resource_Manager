@@ -1,7 +1,12 @@
 import numpy as np
 import util
 
-task_colors = colors = ["#008855", "#880033", "#550088", "#885500", "#007788", "#003388", "#338800", "#880077", "#881100", "#778800"]
+task_colors = [
+    "#008855", "#880033", "#550088", "#885500", "#007788",
+    "#003388", "#338800", "#880077", "#881100", "#778800",
+    "#AA5500", "#004477", "#9900AA", "#667700", "#006699",
+    "#550099", "#996600", "#997700", "#003344", "#770044"
+]
 square_char = "\u25A0"
 machine_grey = "#333333"
 
@@ -15,7 +20,10 @@ def print_hex_color(hex_color, text):
 def visualise_tasks(tasks):
     i = 0
     for task in tasks:
-        print(f"Task {i}: [", end='')
+        if i > 9:
+            print(f"Task {chr(ord('A') + i - 10)}: [", end='')
+        else:
+            print(f"Task {i}: [", end='')
         for j in range(task):
             print_hex_color(task_colors[i], square_char)
         print(f"] ({task})")
@@ -24,7 +32,7 @@ def visualise_tasks(tasks):
 
 def visualise_machines(numb_machines, max_time):
     for machine in range(numb_machines):
-        print(f"Machine {machine}[", end='')
+        print(f"Machine {machine}: [", end='')
         for timepoint in range(max_time):
             print_hex_color(machine_grey, square_char)
         print("]")
@@ -66,7 +74,10 @@ def visualise_results(optimal_policy, env):
             if timepoint == 0:
                 print("-", end='')
             else:
-                print(timepoint-1, end='')
+                if timepoint > 10:
+                    print(chr(ord('A') + timepoint - 10), end='')
+                else:
+                    print(timepoint-1, end='')
         print("]")
         i += 1
 
