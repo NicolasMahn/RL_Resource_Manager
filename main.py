@@ -1,7 +1,7 @@
 import numpy as np
 import util
-from environments.resource_management import ResourceManagement
-import algorithms.dqn as alg
+from environments.resource_management_static_tasks import ResourceManagement
+import algorithms.dqn_static_tasks as alg
 import matplotlib.pyplot as plt
 import visualise_results as vis
 import time
@@ -9,8 +9,9 @@ import time
 
 def main():
 
-    tasks = [4, 1, 2]
-    numb_of_machines = 2
+    tasks = [4, 1, 2, 6, 8, 9, 12, 4, 6, 7, 8, 9, 10]  # max numb of tasks: 16
+    # max task duration: 32
+    numb_of_machines = 3  # max: 3
 
     print("The Tasks:")
     vis.visualise_tasks(tasks)
@@ -21,7 +22,7 @@ def main():
 
     print("\nTraining the DQN model...")
     env = ResourceManagement(numb_of_machines=numb_of_machines, tasks=tasks)
-    dqn_model, fitness_curve = alg.q_learning(env, episodes=400, updates=True)
+    dqn_model, fitness_curve = alg.q_learning(env, episodes=5, updates=True)
     show_fitness_curve(fitness_curve, subtitle="DQN")
     print("")
 
