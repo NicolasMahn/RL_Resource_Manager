@@ -3,18 +3,19 @@ import util
 
 random = np.random.random
 randint = np.random.randint
+randint_with_weighted_sqrt = util.weighted_randint
 
 
 class GenericEnvironment:
 
     # depth of each dimension
-    def __init__(self, dimensions, actions, start_state, number_of_possible_states, actions_str=None):
+    def __init__(self, dimensions, actions, start_state, number_of_possible_states=None, actions_str=None):
         # depth of each dimension
         self.dimensions = dimensions
         # actions
         self.actions = actions
         # starting state
-        self.start_state = start_state
+        self.result = start_state
         self._actions_str = list()
         if actions_str is None:
             for action in actions:
@@ -60,4 +61,4 @@ class GenericEnvironment:
         return False
 
     def get_start_state(self):
-        return list(self.start_state)
+        return list(self.result)

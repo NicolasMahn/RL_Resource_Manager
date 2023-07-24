@@ -1,5 +1,6 @@
 import numpy as np
 import util
+import matplotlib.pyplot as plt
 
 task_colors = [
     "#008855", "#880033", "#550088", "#885500", "#007788",
@@ -18,7 +19,7 @@ def print_hex_color(hex_color, text):
 
 
 def visualise_tasks(tasks):
-    i = 0
+    i = 1
     for task in tasks:
         if i > 9:
             print(f"Task {chr(ord('A') + i - 10)}: [", end='')
@@ -39,36 +40,16 @@ def visualise_machines(numb_machines, max_time):
 
 
 def visualise_results(optimal_policy, env):
-    tasks = env.tasks
-    numb_machines = env.numb_of_machines
-    max_time = env.max_time
+    machines = env.get_result()
 
-    machine = np.zeros(max_time, dtype=int)
-
-    machines = []
-    for i in range(numb_machines):
-        machines.append(machine.copy())
-
-
-    j = 0
-
-    for (state, action) in optimal_policy:
-        if action is not None:
-            if action[0] != -1:
-                for i in range(j, j + tasks[action[0]]):
-                    machines[action[1]][i] = action[0]+1
-            else:
-                j += 1
-
-
-    i = 0
+    i = 1
     for machine in machines:
         print(f"Machine {i}: [", end='')
         for timepoint in machine:
-            if timepoint == -1 or timepoint == 0:
+            if timepoint == 0:
                 print_hex_color(machine_grey, square_char)
             else:
-                print_hex_color(task_colors[timepoint-1], square_char)
+                print_hex_color(task_colors[timepoint], square_char)
         print("]  [", end='')
         for timepoint in machine:
             if timepoint == 0:
@@ -77,8 +58,16 @@ def visualise_results(optimal_policy, env):
                 if timepoint > 10:
                     print(chr(ord('A') + timepoint - 10), end='')
                 else:
-                    print(timepoint-1, end='')
+                    print(timepoint, end='')
         print("]")
         i += 1
+
+def show_fitness_curve(data, title="Fitness Curve", subtitle="", x_label="episodes", y_label="return"):
+    plt.suptitle(title, fontsize=18)  # title
+    plt.title(subtitle, fontsize=10)  # subtitle
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.plot([data[i] for i in range(0, len(data))], color="#008855", linewidth=3)
+    plt.show()
 
 

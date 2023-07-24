@@ -1,134 +1,191 @@
 import numpy as np
+
 from .generic_environment import GenericEnvironment
 import util
+import tensorflow as tf
+from reward_tracker import RewardTracker
 
 random = np.random.random
 randint = np.random.randint
+weighted_randint = util.weighted_randint
+reward_tracker = RewardTracker()
+
 
 class ResourceManagement(GenericEnvironment):
 
-    def __init__(self, numb_of_machines, tasks):
-        self.steps = 0
-        self.tasks = tasks
-        self.numb_of_tasks = len(tasks)
-        self.numb_of_machines = numb_of_machines
-        self.max_time = sum([task for task in tasks])
-        self.max_task = max(tasks)
+    def __init__(self, max_numb_of_machines, max_numb_of_tasks, max_task_depth, fixed_max_numbers,
+                 high_numb_of_tasks_preference, high_numb_of_machines_preference, test_set):
+        self.machines = None
+        self.possible_actions = None
+        self.impossible_actions = None
+        self.current_cumulative_machines = None
 
-        start_state = np.zeros((numb_of_machines + self.numb_of_tasks,), dtype=int)
-        for i in range(numb_of_machines, numb_of_machines + self.numb_of_tasks):
-            start_state[i] = tasks[i-numb_of_machines]
+        self.fixed_max_numbers = fixed_max_numbers
+        self.high_numb_of_tasks_preference = \
+            high_numb_of_tasks_preference
+        self.high_numb_of_machines_preference = \
+            high_numb_of_machines_preference
+        self.max_numb_of_tasks = max_numb_of_tasks
+        self.max_numb_of_machines = max_numb_of_machines
+        self.max_time = max_numb_of_tasks * max_task_depth
+        self.max_task_depth = max_task_depth
+        if test_set is not None:
+            self.test_set = test_set
+            self.test_set_tasks = [item["tasks"] for item in test_set]
+        else:
+            self.test_set = None
+            self.test_set_tasks = None
 
-        dimensions = np.ones((numb_of_machines + self.numb_of_tasks,), dtype=int)
-        for i in range(numb_of_machines):
-            dimensions[i] = self.max_task
-        for i in range(numb_of_machines, numb_of_machines + self.numb_of_tasks):
-            dimensions[i] = tasks[i-numb_of_machines]
+        dimensions = [self.max_numb_of_machines + 2, self.max_time]
 
-        # actions[task][machine][timepoint (as int)]
         actions = []
-        for task in range(0, self.numb_of_tasks):
-            for machine in range(numb_of_machines):
+        for task in range(1, self.max_numb_of_tasks + 1):
+            for machine in range(self.max_numb_of_machines):
                 actions.append([task, machine])
         actions.append([-1, -1])
 
+        self.numb_of_tasks = self.max_numb_of_tasks
+        self.numb_of_machines = self.max_numb_of_machines
+        self.tasks = np.zeros(self.numb_of_tasks)
+        self.current_max_time = self.max_time
+
         super().__init__(dimensions=dimensions,
                          actions=actions,
-                         start_state=start_state,
-                         number_of_possible_states=util.binary_to_decimal(dimensions))
-        pass
-    
-    def int_state_to_tuple(self, int_state):
-        return util.decimal_to_binary(int_state, self.max_time)
+                         start_state=np.zeros(max_numb_of_machines +
+                                              max_numb_of_tasks))
+
+    def get_specific_state(self, tasks, numb_of_machines):
+        self.numb_of_tasks = len(tasks)
+        self.numb_of_machines = numb_of_machines
+        self.tasks = tasks
+        self.current_max_time = sum([task for task in self.tasks])
+        self.current_cumulative_machines = np.zeros(self.numb_of_machines)
+
+        start_state = [np.pad(self.tasks, (0, self.current_max_time - len(self.tasks)), constant_values=0)]
+        start_state.extend([[0] * self.current_max_time for _ in range(self.numb_of_machines)])
+        start_state.append(np.zeros(self.current_max_time, dtype=int))
+        return list(start_state)
+
+    def get_start_state(self):
+        self.numb_of_machines, self.numb_of_tasks, self.tasks = \
+            util.generate_specific_job_shop(
+                self.max_numb_of_machines, self.max_numb_of_tasks,
+                self.max_task_depth,
+                self.high_numb_of_tasks_preference,
+                self.high_numb_of_machines_preference,
+                self.fixed_max_numbers, self.test_set_tasks)
+
+        self.current_cumulative_machines = np.zeros(self.numb_of_machines)
+        self.current_max_time = sum([task for task in self.tasks])
+
+        start_state = [np.pad(self.tasks, (0, self.current_max_time - len(self.tasks)), constant_values=0)]
+        start_state.extend([[0] * self.current_max_time
+                            for _ in range(self.numb_of_machines)])
+        start_state.append(np.zeros(self.current_max_time, dtype=int))
+        return list(start_state)
 
     def done(self, state):
-        if sum(state) == 0:
+        if sum(state[0]) == 0:
             return True
         else:
-            False
+            return False
 
-    def extract_info_from_state(self, state):
-        machines = state[:self.numb_of_machines]
-        tasks = state[-self.numb_of_tasks:]
+    @staticmethod
+    def extract_info_from_state(state):
+        tasks = list(state[0])
+        m = list(state[1:-1])
+        machines = []
+        for machine in m:
+            machines.append(list(machine))
+        step = state[-1][0]
 
-        return machines, tasks
+        return machines, tasks, step
 
     # since rewards are actually given for state action pairs
     def get_reward(self, state, action, next_state):
-        self.steps += 1
-        machines, tasks = self.extract_info_from_state(next_state)
-        reward = 0
+        reward = 0.1  # small reward for each step
 
-        #if action[0] == -1:
-        #    reward = -5
+        # penalty for uneven distribution of tasks
+        reward -= (util.current_worst(self.current_cumulative_machines) -
+                   util.assumed_optimal(self.current_cumulative_machines))
 
-        if any(machines) == 0 and action[0] == -1:
-            # change reward depending on machine
-            reward -= 5
+        reward += util.current_best(self.current_cumulative_machines)
 
-        if self.done(next_state):
-            reward = (self.max_time * 10)/self.steps
-            self.steps = 0
-            return reward
-
-        #max_machine = max(machines)
-        #if max_machine == 0:
-        #    return -10
-        # print(f"reward: {reward}")
+        # reward = np.clip(reward/10, -1.0, 1.0)
         return reward
 
     def get_next_state(self, state, action):
-        machines, tasks = self.extract_info_from_state(state)
+        machines, tasks, step = self.extract_info_from_state(state)
         if action[0] == -1:
-            for i in range(len(machines)):
-                if machines[i] > 0:
-                    machines[i] -= 1
+            step += 1
         else:
-            tasks[action[0]] = 0
-            machines[action[1]] += self.tasks[action[0]]
-
-        next_state = self.get_state_from_machines_and_tasks(machines, tasks)
+            self.current_cumulative_machines[action[1]] += \
+                tasks[action[0] - 1]
+            for i in range(step, tasks[action[0] - 1] + step):
+                machines[action[1]][i] += action[0]
+            tasks[action[0] - 1] = 0
+            self.machines = machines
+        next_state = self.get_state_from_machines_and_tasks(
+            machines, tasks, step)
         return next_state
 
     def get_possible_actions(self, state):
         possible_actions = []
         impossible_actions = []
-        machines, tasks = self.extract_info_from_state(state)
+        machines, tasks, step = self.extract_info_from_state(state)
 
-        for task in range(self.numb_of_tasks):
-            if tasks[task] != 0:
-                possible = True
-            else:
+        for task in range(1, self.max_numb_of_tasks + 1):
+            if len(tasks) + 1 <= task:
                 possible = False
-            j = 0
-            for machine in machines:
-                if machine <= 0 and possible:
-                    possible_actions.append([task, j])
+            else:
+                if tasks[task - 1] != 0:
+                    possible = True
                 else:
-                    impossible_actions.append([task, j])
-                j += 1
+                    possible = False
 
-        if sum(machines) > 0:
+            for m in range(self.max_numb_of_machines):
+                if len(machines) <= m:
+                    impossible_actions.append([task, m])
+                else:
+                    machine = machines[m]
+                    if machine[step] <= 0 and possible:
+                        possible_actions.append([task, m])
+                    else:
+                        impossible_actions.append([task, m])
+
+        if any(machine[step] != 0 for machine in machines):
             possible_actions.append([-1, -1])
         else:
             impossible_actions.append([-1, -1])
 
+        self.impossible_actions = impossible_actions
+        self.possible_actions = possible_actions
+
         return possible_actions, impossible_actions
 
-    def get_state_from_machines_and_tasks(self, machines, tasks):
-        state = np.zeros((self.numb_of_machines + self.numb_of_tasks,), dtype=int)
-        for i in range(len(machines)):
-            state[i] = machines[i]
-        for i in range(len(machines), len(state)):
-            state[i] = tasks[i- len(machines)]
-        return state
+    def get_state_from_machines_and_tasks(self, machines, tasks, step):
+        start_state = [tasks]
+        start_state.extend(machines)
+        start_state.append(np.full(self.current_max_time, step, dtype=int))
+        return list(start_state)
 
     def state_for_dqn(self, state):
-        return state
-        #tasks = self.extract_tasks(state)
-        #machines = self.extract_machines(state)
-        #state = [util.binary_to_decimal(machine) for machine in machines]
-        #state.append(util.binary_to_decimal(tasks))
-        #state.append(self.max_time)
-        #return state
-        # return util.binary_to_decimal(tasks), self.max_time, util.binary_to_decimal(util.flatmap_list(machines)),
+        machines, tasks, step = self.extract_info_from_state(state)
+
+        t_padded = np.pad(tasks, (0, self.max_time - len(tasks)), constant_values=0)
+
+        ms_padded = []
+        for m in machines:
+            m_padded = np.pad(m, (0, self.max_time - len(m)), constant_values=0)
+            ms_padded.append(m_padded)
+
+        while len(ms_padded) < self.max_numb_of_machines:
+            ms_padded.append([-1] * self.max_time)
+
+        full_state = [list(t_padded)]
+        full_state.extend(ms_padded)
+        full_state.append([int(step)] * self.max_time)
+        return tf.convert_to_tensor(full_state)
+
+    def get_result(self):
+        return self.machines

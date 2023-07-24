@@ -61,7 +61,7 @@ def get_pi_from_q(env, dqn_model):
 
 
 def create_dqn_model(dimensions, num_actions, learning_rate=0.00025):
-    state_input = tf.keras.layers.Input(shape=(dimensions[0], dimensions[1],))
+    state_input = tf.keras.layers.Input(shape=(dimensions,))
 
     # Convolutions on the frames on the screen
     layer1 = layers.Dense(32, activation="relu")(state_input)

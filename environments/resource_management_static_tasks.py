@@ -55,7 +55,7 @@ class ResourceManagement(GenericEnvironment):
 
     # since rewards are actually given for state action pairs
     def get_reward(self, state, action, next_state):
-        self.steps += 1
+
         machines, tasks = self.extract_info_from_state(next_state)
         reward = 0
 
@@ -65,6 +65,7 @@ class ResourceManagement(GenericEnvironment):
         if any(machines) == 0 and action[0] == -1:
             # change reward depending on machine
             reward -= 5
+            self.steps += 1
 
         if self.done(next_state):
             reward = (self.max_time * 10)/self.steps
