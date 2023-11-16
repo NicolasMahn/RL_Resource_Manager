@@ -1,9 +1,9 @@
 import numpy as np
 
 from .generic_environment import GenericEnvironment
-import util
+from resources import util
 import tensorflow as tf
-from reward_tracker import RewardTracker
+from resources.reward_tracker import RewardTracker
 
 random = np.random.random
 randint = np.random.randint

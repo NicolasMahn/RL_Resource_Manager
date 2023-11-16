@@ -1,5 +1,3 @@
-import numpy as np
-import util
 import matplotlib.pyplot as plt
 
 task_colors = [

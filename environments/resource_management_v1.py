@@ -1,9 +1,7 @@
 import numpy as np
 
-from algorithms import dqn
 from .generic_environment import GenericEnvironment
-import util
-import tensorflow as tf
+from resources import util
 
 random = np.random.random
 randint = np.random.randint

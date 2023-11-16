@@ -1,5 +1,5 @@
 import numpy as np
-import util
+from resources import util
 
 random = np.random.random
 randint = np.random.randint

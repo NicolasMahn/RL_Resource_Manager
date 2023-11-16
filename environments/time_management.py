@@ -1,7 +1,7 @@
 import numpy as np
 
 from .generic_environment import GenericEnvironment
-import util
+from resources import util
 import tensorflow as tf
 
 random = np.random.random

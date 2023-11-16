@@ -1,27 +1,38 @@
-from tqdm import tqdm
-import util
+import tqdm
+from resources import util, visualise_results as vis
 from environments.time_management import TimeManagement
 from environments.resource_management import ResourceManagement
 import algorithms.dqn as alg
-import visualise_results as vis
+import tensorflow as tf
 
-from optimal_algorithm import generate_test_data
+from evaluation_monitoring.optimal_algorithm import generate_test_data
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # Replace "0" with the index of the GPU you want to use
+os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # Allow GPU memory growth
 
 
 def main():
+    gpus = tf.config.list_physical_devices('GPU')
+    if gpus:
+        for gpu in gpus:
+            print("Using a GPU:", gpu.name)
+    else:
+        print("No GPUs found")
+        print("GPUs found:", gpus)
+
     ''' Change Hyperparameters here: '''
 
     # environment parameters
-    environment = "Time"  # Time or Resources
-    max_numb_of_machines = 2  # only for Resource environment / has to be 1 for Time environment
-    max_numb_of_tasks = 4
+    environment = "Resource"  # Time or Resource
+    max_numb_of_machines = 3  # Only for Resource environment / has to be 1 for Time environment
+    max_numb_of_tasks = 10
     max_task_depth = 10
     fixed_max_numbers = True
     high_numb_of_tasks_preference = 0.35
     high_numb_of_machines_preference = 0.8  # only for Resource environment
 
     # algorithm parameters
-    episodes = 100
+    episodes = 1000
     gamma = 0.85
     epsilon = 0.4
     alpha = 0.1
@@ -31,9 +42,9 @@ def main():
     update_target_network = 50
 
     # miscellaneous
-    numb_of_executions = 10  # displays average fitness if bigger than 1
+    numb_of_executions = 1  # displays average fitness if bigger than 1
     save_final_dqn_model = False  # only works if numb_of_executions is 1
-    model_name = "Resource_500Episodes_23072023"  # the name the model is saved under
+    model_name = "TEST"  # the name the model is saved under
     test_set_abs_size = 50  # only works if numb_of_executions is 1
     print_hyperparameters = True
 
@@ -97,13 +108,13 @@ def main():
         print("\n")
 
         if environment == "Time":
-            print(f"The accuracy of the algorithm is: {validate_time_dqn(test_set, env, dqn_model)}%")
+            print(f"The accuracy of the algorithm is: {util.validate_time_dqn(test_set, env, dqn_model)}%")
             # print(f"Before training it was: {validate_time_dqn(test_set, env, pretrained_dqn_model)}%")
             print("This shows the average correctly assorted tasks")
         else:
             print(f"The accuracy of the algorithm is: "
-                  f"{validate_resource_dqn(test_set, env, dqn_model)}/"
-                  f"{validate_resource_dqn(test_set, env, pretrained_dqn_model)}")
+                  f"{util.validate_resource_dqn(test_set, env, dqn_model)}/"
+                  f"{util.validate_resource_dqn(test_set, env, pretrained_dqn_model)}")
             print("The accuracy is calculated using the Root Mean Squared Error (RMSE). Lower is better.")
             print("The second number is the RMSE of the untrained NN")
         print("")
@@ -146,31 +157,6 @@ def main():
         print("numb_of_executions:", numb_of_executions)
         print("save_final_dqn_model:", save_final_dqn_model)
         print("test_set_abs_size:", test_set_abs_size)
-
-
-def validate_resource_dqn(test_set, env, dqn_model):
-    time_list = []
-    optimal_time_list = []
-    for item in test_set:
-        # Obtain the optimal policy
-        policy = alg.get_pi_from_q(env, dqn_model, item["tasks"], item["numb_of_machines"])
-
-        time_list.append(util.time_from_policy(env, policy))
-
-        optimal_time_list.append(item["time"])
-
-    return util.calculate_rmse(optimal_time_list, time_list)
-
-
-def validate_time_dqn(test_set, env, dqn_model):
-    soredness_list = []
-
-    for item in test_set:
-        _ = alg.get_pi_from_q(env, dqn_model, item["tasks"], item["numb_of_machines"])
-        result = env.get_result()
-        soredness_list.append(util.sortedness_percentage(result[0]))
-
-    return sum(soredness_list) / len(soredness_list)
 
 
 if __name__ == '__main__':

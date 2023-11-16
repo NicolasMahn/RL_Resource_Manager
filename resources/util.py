@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import algorithms.dqn as alg
 
 random = np.random.random
 randint = np.random.randint
@@ -191,3 +192,28 @@ def sortedness_percentage(a):
     sorted_pairs = sum(a[i] <= a[i + 1] for i in range(num_pairs))  # count of sorted pairs
 
     return (sorted_pairs / num_pairs) * 100  # percentage of sortedness
+
+
+def validate_resource_dqn(test_set, env, dqn_model):
+    time_list = []
+    optimal_time_list = []
+    for item in test_set:
+        # Obtain the optimal policy
+        policy = alg.get_pi_from_q(env, dqn_model, item["tasks"], item["numb_of_machines"])
+
+        time_list.append(time_from_policy(env, policy))
+
+        optimal_time_list.append(item["time"])
+
+    return calculate_rmse(optimal_time_list, time_list)
+
+
+def validate_time_dqn(test_set, env, dqn_model):
+    soredness_list = []
+
+    for item in test_set:
+        _ = alg.get_pi_from_q(env, dqn_model, item["tasks"], item["numb_of_machines"])
+        result = env.get_result()
+        soredness_list.append(sortedness_percentage(result[0]))
+
+    return sum(soredness_list) / len(soredness_list)

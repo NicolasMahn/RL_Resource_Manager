@@ -1,11 +1,10 @@
 import numpy as np
-import util
+from resources import util
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 from tqdm import tqdm
 import sys
-import math
 from tensorflow import keras
 from tensorflow.keras import layers
 
