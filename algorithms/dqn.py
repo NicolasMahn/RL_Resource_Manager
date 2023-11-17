@@ -1,44 +1,46 @@
 import numpy as np
-from resources import util
 import os
-
-
 import tensorflow as tf
+from tensorflow import keras
 from tqdm import tqdm
 import sys
-from tensorflow import keras
 
+from resources import util
 from .replay_buffer import ReplayBuffer
 
+# Random number generators
 rnd = np.random.random
 randint = np.random.randint
 
 
 def redirect_stdout():
-    # Redirect stdout to /dev/null or nul
+    # Redirect stdout to /dev/null or null to suppress output
     stdout_orig = sys.stdout
     sys.stdout = open(os.devnull, 'w')
     return stdout_orig
 
 
 def restore_stdout(stdout_orig):
-    # Restore the original stdout
+    # Restore the original stdout after redirection
     sys.stdout.close()
     sys.stdout = stdout_orig
 
 
-def get_pi_from_q(env, dqn_model, tasks, numb_of_machines):
-    stdout = redirect_stdout()
+def get_pi_from_q(env, dqn_model, tasks, numb_of_machines, less_comments=False):
+    # If toggled the standard output is restricted to suppress unwanted output
+    if less_comments:
+        stdout = redirect_stdout()
+
     optimal_policy = []
 
-    # initial state
+    # Initial state
     state = env.get_specific_state(tasks, numb_of_machines)
 
     while not env.done(state):
-        # Get Q-values for all actions from DQN
+        # Get Q-values for all actions from DQN model
         q_values = dqn_model.predict(np.array([env.state_for_dqn(state)]))
 
-        # choose a possible action
+        # Determine possible and impossible actions
         possible_actions, impossible_actions = env.get_possible_actions(state)
         if len(possible_actions) == 0:
             break
@@ -48,32 +50,37 @@ def get_pi_from_q(env, dqn_model, tasks, numb_of_machines):
         # Mask Q-values of impossible actions
         q_values[0][impossible_action_indices] = -np.inf  # Replace with a large negative value
 
-        # greedy
+        # Greedy action selection
         action = env.actions[util.argmax(q_values[0])]
 
         optimal_policy.append((list(state), list(action)))
 
+        # Get next state
         state = env.get_next_state(state, action)
 
-    optimal_policy.append((state, None))  # Add the final state
+    # Add the final state
+    optimal_policy.append((state, None))
 
-    restore_stdout(stdout)
+    # If toggled the standard output is restored
+    if less_comments:
+        restore_stdout(stdout)
+
     return optimal_policy
 
 
 def create_dqn_model(dimensions, numb_of_actions):
-    state_input = keras.layers.Input(shape=tuple(dimensions))
 
+    # Define input and dense layers of the DQN model
+    state_input = keras.layers.Input(shape=tuple(dimensions))
     layer1 = keras.layers.Dense(64, activation="relu")(state_input)
     layer2 = keras.layers.Dense(128, activation="relu")(layer1)
     flat_layer = keras.layers.Flatten()(layer2)  # Flatten the layers
     layer3 = keras.layers.Dense(128, activation="relu")(flat_layer)
     layer4 = keras.layers.Dense(64, activation="relu")(layer3)
-
     action = keras.layers.Dense(numb_of_actions, activation="softmax")(layer4)
 
+    # Construct and compile the model
     model = keras.Model(inputs=state_input, outputs=action)
-
     optimizer = keras.optimizers.Adam()
     loss_function = keras.losses.Huber()
 
@@ -84,33 +91,28 @@ def q_learning(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_epsilon,
                get_pretrained_dqn=False, progress_bar=True):
     fitness_curve = list()
 
-    # Create a progress bar
+    # Create a progress bar for training
     if progress_bar:
         progress_bar = tqdm(total=episodes, unit='episode')
 
-    # define DQN model
+    # Initialize DQN and target models
     dqn_model, optimizer, loss_function = create_dqn_model(env.dimensions, len(env.actions))
-
-    # define target model
     target_dqn_model = keras.models.clone_model(dqn_model)
     target_dqn_model.set_weights(dqn_model.get_weights())
 
-    # define pretrained model
+    # Initialize pretrained model
     pretrained_dqn_model = keras.models.clone_model(dqn_model)
     pretrained_dqn_model.set_weights(dqn_model.get_weights())
 
     # Create Replay Buffer
     replay_buffer = ReplayBuffer(10000)
 
-    # the main training loop
+    # Main training loop
     for episode in range(episodes):
-
-        # initial state
         state = env.get_start_state()
-
         return_ = 0
 
-        # if not final state
+        # If not final state
         while not env.done(state):
 
             # Get Q-values for all actions from DQN
@@ -118,7 +120,7 @@ def q_learning(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_epsilon,
                 np.array([env.state_for_dqn(state)]))
             q_values = actual_q_values.numpy()[0]
 
-            # choose a possible action
+            # Action selection and masking
             possible_actions, impossible_actions = \
                 env.get_possible_actions(state)
             if len(possible_actions) == 0:
@@ -128,15 +130,12 @@ def q_learning(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_epsilon,
             impossible_action_indices = \
                 [env.action_to_int(action) for action in impossible_actions]
 
-            # Mask Q-values of impossible actions
-            q_values[impossible_action_indices] = -1e6  # a large negative value
+            q_values[impossible_action_indices] = -1e6  # Mask with a large negative value
 
-            # Choose action based on epsilon-greedy policy
+            # Epsilon-greedy policy
             if rnd() < epsilon:
-                # choose random action
                 action = possible_actions[randint(0, len(possible_actions))]
             else:
-                # greedy
                 action = env.actions[util.argmax(q_values)]
                 if action in impossible_actions:
                     action = possible_actions[randint(0, len(possible_actions))]
@@ -180,11 +179,13 @@ def q_learning(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_epsilon,
             # Update state
             state = list(next_state)
 
+        # Target network update
         if episode % update_target_network == 0:
             target_dqn_model.set_weights(dqn_model.get_weights())
 
         fitness_curve.append(return_)
 
+        # Epsilon decay
         epsilon = max(min_epsilon, epsilon * epsilon_decay)
 
         # Update the progress bar
@@ -195,6 +196,7 @@ def q_learning(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_epsilon,
     if progress_bar:
         progress_bar.close()
 
+    # Return models and fitness curve
     if get_pretrained_dqn:
         return dqn_model, fitness_curve, pretrained_dqn_model
     else:

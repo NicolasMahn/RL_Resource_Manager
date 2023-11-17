@@ -1,41 +1,47 @@
 import threading
 import json
-import util
+
+from resources import util
 
 
 def job_shop(tasks, num_machines):
+    # Function to find the optimal task scheduling in a job shop environment
     num_tasks = len(tasks)
-    best_schedule = []
-    best_time = float('inf')
+    best_schedule = []  # Stores the best schedule found
+    best_time = float('inf')  # Stores the best time (shortest) found
 
     def dfs(schedule, task_index, machine_times):
+        # Depth-first search algorithm to explore all possible schedules
         nonlocal best_schedule, best_time
 
+        # Base case: all tasks have been scheduled
         if task_index == num_tasks:
+            # Update the best schedule and time if a better schedule is found
             if max(machine_times) < best_time:
                 best_schedule = schedule.copy()
                 best_time = max(machine_times)
             return
 
+        # Recursive case: try assigning the current task to each machine
         for machine in range(num_machines):
-            machine_times[machine] += tasks[task_index]
-            schedule[task_index] = machine
-
+            machine_times[machine] += tasks[task_index]  # Assign task to the machine
+            schedule[task_index] = machine  # Update the schedule
+            # Only proceed with DFS if current max time is less than best time
             if max(machine_times) < best_time:
                 dfs(schedule, task_index + 1, machine_times)
-
+            # Backtrack
             machine_times[machine] -= tasks[task_index]
 
-    initial_schedule = [-1] * num_tasks
-    initial_machine_times = [0] * num_machines
-    dfs(initial_schedule, 0, initial_machine_times)
+    initial_schedule = [-1] * num_tasks  # Initialize the schedule with all tasks unassigned
+    initial_machine_times = [0] * num_machines  # Initialize machine times as zero
+    dfs(initial_schedule, 0, initial_machine_times)  # Start DFS
 
     return best_schedule, best_time
 
 
 def generate_and_solve_job_shop(max_numb_of_machines, max_numb_of_tasks, max_task_depth, high_numb_of_tasks_preference,
                                 high_numb_of_machines_preference, fixed_max_numbers):
-    # Generate problem instance
+    # Generates a job shop problem and solves it using the job_shop algorithm
     numb_of_machines, numb_of_tasks, tasks = util.generate_specific_job_shop(max_numb_of_machines, max_numb_of_tasks,
                                                                              max_task_depth,
                                                                              high_numb_of_tasks_preference,
@@ -57,6 +63,7 @@ def generate_and_solve_job_shop(max_numb_of_machines, max_numb_of_tasks, max_tas
 # Function to run generate_and_solve_job_shop in a separate thread
 def run_job_shop_thread(max_numb_of_machines, max_numb_of_tasks, max_task_depth,
                         high_numb_of_tasks_preference, high_numb_of_machines_preference, fixed_max_numbers, results):
+    # Function to run job shop problem in a separate thread
     result_dict = generate_and_solve_job_shop(max_numb_of_machines, max_numb_of_tasks, max_task_depth,
                                               high_numb_of_tasks_preference, high_numb_of_machines_preference,
                                               fixed_max_numbers)
@@ -65,6 +72,7 @@ def run_job_shop_thread(max_numb_of_machines, max_numb_of_tasks, max_task_depth,
 
 
 def is_unlikely_duplicate(result1, result2):
+    # Checks if two job shop results are duplicates
     tasks1 = result1['tasks']
     tasks2 = result2['tasks']
     num_machines1 = result1['numb_of_machines']
@@ -75,6 +83,7 @@ def is_unlikely_duplicate(result1, result2):
 def generate_test_data(max_numb_of_machines, max_numb_of_tasks, max_task_depth,
                        high_numb_of_tasks_preference, high_numb_of_machines_preference, numb_of_threads,
                        fixed_max_numbers):
+    # Generates test data for job shop problems using multiple threads
     # Create a list to store the results
     all_results = []
 

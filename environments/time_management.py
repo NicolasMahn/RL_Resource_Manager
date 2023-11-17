@@ -1,9 +1,10 @@
 import numpy as np
+import tensorflow as tf
 
 from .generic_environment import GenericEnvironment
 from resources import util
-import tensorflow as tf
 
+# Random number generators
 random = np.random.random
 randint = np.random.randint
 weighted_randint = util.weighted_randint
@@ -13,36 +14,34 @@ class TimeManagement(GenericEnvironment):
 
     def __init__(self, max_numb_of_tasks, max_task_depth, test_set, fixed_max_numbers,
                  high_numb_of_tasks_preference):
-        self.possible_actions = None
-        self.impossible_actions = None
-        self.fixed_max_numbers = fixed_max_numbers
-        self.high_numb_of_tasks_preference = high_numb_of_tasks_preference
-        self.max_numb_of_tasks = max_numb_of_tasks
+        # Initialize TimeManagement environment with specific parameters
+        self.possible_actions = None  # Actions that can be taken in the current state
+        self.impossible_actions = None  # Actions that cannot be taken
+        self.fixed_max_numbers = fixed_max_numbers  # Flag to keep number of tasks constant
+        self.high_numb_of_tasks_preference = high_numb_of_tasks_preference  # Preference for high number of tasks
+        self.max_numb_of_tasks = max_numb_of_tasks  # Maximum number of tasks in the environment
+        self.max_task_depth = max_task_depth  # Maximum depth of tasks
 
-        self.max_task_depth = max_task_depth
-        if test_set is not None:
-            self.test_set = test_set
-            self.test_set_tasks = [item["tasks"] for item in test_set]
-        else:
-            self.test_set = None
-            self.test_set_tasks = None
+        # Handling test sets if provided
+        self.test_set = test_set
+        self.test_set_tasks = [item["tasks"] for item in test_set] if test_set is not None else None
 
+        # Defining dimensions for the environment
         dimensions = [2, self.max_numb_of_tasks]
 
+        # Initialize tasks and results
         self.numb_of_tasks = self.max_numb_of_tasks
         self.tasks = np.zeros(self.numb_of_tasks)
         self.result = np.zeros(self.numb_of_tasks, dtype=int)
 
-        actions = []
-        for task in range(self.max_numb_of_tasks):
-            for i in range(len(self.result)):
-                actions.append([task, i])
+        # Generate possible actions
+        actions = [[task, i] for task in range(self.max_numb_of_tasks) for i in range(len(self.result))]
 
-        super().__init__(dimensions=dimensions,
-                         actions=actions,
-                         start_state=np.zeros(max_numb_of_tasks))
+        # Call to superclass constructor
+        super().__init__(dimensions=dimensions, actions=actions, start_state=np.zeros(max_numb_of_tasks))
 
     def get_specific_state(self, tasks, _):
+        # Function to get a specific state based on provided tasks
         self.tasks = tasks
         self.numb_of_tasks = len(self.tasks)
         self.result = np.zeros(self.numb_of_tasks, dtype=int)
@@ -50,6 +49,7 @@ class TimeManagement(GenericEnvironment):
         return list([self.tasks, self.result])
 
     def get_start_state(self):
+        # Function to initialize the starting state of the environment
         self.numb_of_tasks, self.tasks = \
             util.generate_specific_time_job_shop(
                 self.max_numb_of_tasks, self.max_task_depth,
@@ -60,13 +60,14 @@ class TimeManagement(GenericEnvironment):
         return list([self.tasks, self.result])
 
     def done(self, state):
+        # Function to check if the current state is a terminal state
         if sum(state[0]) == 0:
             return True
         else:
             return False
 
-    # since rewards are actually given for state action pairs
     def get_reward(self, state, action, next_state):
+        # Function to calculate reward based on current state, action, and next state
         if action[1] - 1 < 0:
             if state[0][action[0]] == min(self.tasks):
                 reward = 1
@@ -90,6 +91,7 @@ class TimeManagement(GenericEnvironment):
         return reward/2
 
     def get_next_state(self, state, action):
+        # Function to determine the next state based on the current state and action
         next_state = list()
         for s in state:
             next_state.append(list(s))
@@ -100,6 +102,7 @@ class TimeManagement(GenericEnvironment):
         return next_state
 
     def get_possible_actions(self, state):
+        # Function to determine possible actions in the current state
         possible_actions = []
         impossible_actions = []
 
@@ -127,6 +130,7 @@ class TimeManagement(GenericEnvironment):
         return possible_actions, impossible_actions
 
     def state_for_dqn(self, state):
+        # Function to prepare the state for Deep Q-Network (DQN) processing
         state_padded = list()
         for s in state:
             s_padded = np.pad(s, (0, self.max_numb_of_tasks - len(s)), constant_values=-1)
@@ -134,6 +138,5 @@ class TimeManagement(GenericEnvironment):
         return tf.convert_to_tensor(state_padded)
 
     def get_result(self):
-        list_ = []
-        list_.append([r + 1 for r in self.result])
-        return list_
+        # Function to retrieve the result or final state of the environment
+        return [r + 1 for r in self.result]

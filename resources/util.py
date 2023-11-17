@@ -1,22 +1,20 @@
 import numpy as np
 import math
-import algorithms.dqn as alg
 
+# Random number generators
 random = np.random.random
 randint = np.random.randint
 
 
-# numpys argmax just takes the first result if there are several
-# that is problematic and the reason for a new argmax func
 def argmax(elements):
-    # print(f"elements: {elements}")
+    # Custom argmax function that handles ties randomly
     best_elements = argmax_multi(elements)
     return best_elements[randint(0, len(best_elements))]
 
 
 def argmax_multi(elements):
+    # Finds all indices of the maximum value in elements
     max_element = np.max(elements)
-    # print(f"max_element: {max_element}")
     if math.isnan(max_element):
         raise ValueError("NaN in argmax_multi")
     best_elements = [i for i in range(len(elements)) if elements[i] == max_element]
@@ -24,6 +22,7 @@ def argmax_multi(elements):
 
 
 def flatmap_list(lst):
+    # Flattens a nested list into a single list
     result = []
     for item in lst:
         if isinstance(item, list) or isinstance(item, np.ndarray):
@@ -34,6 +33,7 @@ def flatmap_list(lst):
 
 
 def binary_to_decimal(binary_list):
+    # Converts a binary number (list of bits) to its decimal equivalent
     decimal = 0
     for bit in binary_list:
         decimal = decimal * 2 + bit
@@ -41,79 +41,83 @@ def binary_to_decimal(binary_list):
 
 
 def decimal_to_binary(decimal_number, length=None):
+    # Converts a decimal number to its binary representation (list of bits)
     binary_list = []
     while decimal_number > 0:
         bit = decimal_number % 2
         binary_list.insert(0, bit)
         decimal_number //= 2
-
-    # Pad the binary list with leading zeros if a length is specified
-    if length is not None:
+    if length is not None:  # Pad with zeros to match the specified length
         while len(binary_list) < length:
             binary_list.insert(0, 0)
-
     return binary_list
 
 
 def weighted_randint(max_numb, high_value_preference):
-    # Create an array from 0 to max_numb
+    # Returns a weighted random integer, with higher preference for larger numbers
     i = np.arange(max_numb + 1)
-
-    # Adjust the preference value
     adjusted_preference = 4 * high_value_preference
-
-    # Create weights proportional to the task number raised to adjusted high_value_preference power
     weights = np.power(i, adjusted_preference)
-
-    # Normalize the weights so they sum to 1
     weights /= weights.sum()
-
-    # Draw a number from the task array according to the weights
     numb = np.random.choice(i, p=weights)
-
     return numb
 
 
 def average_difference(int_array):
-    if len(int_array) < 2:   # If less than 2 elements, return None (can't compute difference)
+    # Computes the average difference between consecutive elements in an array
+    if len(int_array) < 2:
         return 0
-    diffs = [int_array[i+1]-int_array[i] for i in range(len(int_array)-1)]
-    return sum(diffs) / len(diffs) # Return average difference
+    diffs = [int_array[i+1] - int_array[i] for i in range(len(int_array) - 1)]
+    return sum(diffs) / len(diffs)
 
 
 def calculate_average_sublist(list_of_lists):
+    # Calculates the average of each corresponding element across sublists
     if not list_of_lists:
         return None
-
     num_sublists = len(list_of_lists)
     sublist_length = len(list_of_lists[0])
-
     averages = [0] * sublist_length
-
     for sublist in list_of_lists:
         for i in range(sublist_length):
             if len(sublist) > i:
                 averages[i] += sublist[i]
-
     averages = [average / num_sublists for average in averages]
-
     return averages
 
 
 def assumed_optimal(int_array):
-    return sum(int_array) / len(int_array) # Return average difference
+    # Calculates the assumed optimal (average) value from an integer array
+    return sum(int_array) / len(int_array)
 
 
 def current_worst(int_array):
+    # Finds the maximum value in an integer array
     return max(int_array)
 
 
 def current_best(int_array):
+    # Finds the minimum value in an integer array
     return min(int_array)
 
 
+def find_last_nonzero_index(arr):
+    # Finds the index of the last non-zero element in an array
+    for i in range(len(arr) - 1, -1, -1):
+        if arr[i] != 0:
+            return i
+    return 0  # Return 0 if no non-zero element is found
+
+
+def time_from_policy(env, policy):
+    # Calculates time from a given policy in an environment
+    return max(env.current_cumulative_machines)
+
+
+# Functions below are specific to job shop generation and handling
 def generate_specific_time_job_shop(max_numb_of_tasks, max_task_depth, high_numb_of_tasks_preference, fixed_max_numbers,
                                     test_set_tasks=None):
+    # Generates a specific time job shop configuration for the TimeManagement environment
     if fixed_max_numbers:
         numb_of_tasks = max_numb_of_tasks
     else:
@@ -126,6 +130,7 @@ def generate_specific_time_job_shop(max_numb_of_tasks, max_task_depth, high_numb
 
 def generate_specific_job_shop(max_numb_of_machines, max_numb_of_tasks, max_task_depth, high_numb_of_tasks_preference,
                                high_numb_of_machines_preference, fixed_max_numbers, test_set_tasks=None):
+    # Generates a specific time job shop configuration for the ResourceManagement environment
     if fixed_max_numbers:
         numb_of_tasks = max_numb_of_tasks
         numb_of_machines = max_numb_of_machines
@@ -147,73 +152,4 @@ def generate_tasks(max_task_depth, numb_of_tasks, test_set_tasks=None):
     # Draw numbers from the task array randomly
     task_array = np.random.choice(tasks, size=numb_of_tasks)
 
-    return task_array.tolist()  # convert numpy array to list
-
-
-def time_from_policy(env, policy):
-    return max(env.current_cumulative_machines)
-
-
-def find_last_nonzero_index(arr):
-    for i in range(len(arr) - 1, -1, -1):
-        if arr[i] != 0:
-            return i
-    return 0  # Return 0 if no non-zero element is found
-
-
-def calculate_mse(actual, predicted):
-    if len(actual) != len(predicted):
-        raise ValueError("The lengths of actual and predicted arrays should be equal.")
-
-    squared_errors = [(actual[i] - predicted[i]) ** 2 for i in range(len(actual))]
-    mse = sum(squared_errors) / len(actual)
-    return mse
-
-
-def calculate_rmse(actual, predicted):
-    if len(actual) != len(predicted):
-        raise ValueError("The lengths of actual and predicted arrays should be equal.")
-
-    squared_errors = [(actual[i] - predicted[i]) ** 2 for i in range(len(actual))]
-    mse = sum(squared_errors) / len(actual)
-    rmse = math.sqrt(mse)
-    return rmse
-
-
-def is_sorted(a):
-    return all(a[i] <= a[i + 1] for i in range(len(a) - 1))
-
-
-def sortedness_percentage(a):
-    num_pairs = len(a) - 1  # total number of pairs
-    if num_pairs == 0:
-        return 100.0  # consider an empty list or a list of one element as fully sorted
-
-    sorted_pairs = sum(a[i] <= a[i + 1] for i in range(num_pairs))  # count of sorted pairs
-
-    return (sorted_pairs / num_pairs) * 100  # percentage of sortedness
-
-
-def validate_resource_dqn(test_set, env, dqn_model):
-    time_list = []
-    optimal_time_list = []
-    for item in test_set:
-        # Obtain the optimal policy
-        policy = alg.get_pi_from_q(env, dqn_model, item["tasks"], item["numb_of_machines"])
-
-        time_list.append(time_from_policy(env, policy))
-
-        optimal_time_list.append(item["time"])
-
-    return calculate_rmse(optimal_time_list, time_list)
-
-
-def validate_time_dqn(test_set, env, dqn_model):
-    soredness_list = []
-
-    for item in test_set:
-        _ = alg.get_pi_from_q(env, dqn_model, item["tasks"], item["numb_of_machines"])
-        result = env.get_result()
-        soredness_list.append(sortedness_percentage(result[0]))
-
-    return sum(soredness_list) / len(soredness_list)
+    return task_array.tolist()  # Convert numpy array to list
