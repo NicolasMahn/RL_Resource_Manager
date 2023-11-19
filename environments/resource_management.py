@@ -109,7 +109,7 @@ class ResourceManagement(GenericEnvironment):
         reward -= (util.current_worst(self.current_cumulative_machines) -
                    util.assumed_optimal(self.current_cumulative_machines))
 
-        reward += util.current_best(self.current_cumulative_machines)
+        # reward += util.current_best(self.current_cumulative_machines)
 
         # reward = np.clip(reward/10, -1.0, 1.0)
         return reward

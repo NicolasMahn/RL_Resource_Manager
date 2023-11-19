@@ -48,22 +48,22 @@ def main():
     high_numb_of_machines_preference = 0.8  # Specific to "Resource" environment
 
     # |DQN algorithm parameters|
-    episodes = 1000  # Total number of episodes for training the DQN agent
+    episodes = 100  # Total number of episodes for training the DQN agent
     gamma = 0.85  # Discount factor for future rewards in the Q-learning algorithm
     epsilon = 0.4  # Initial exploration rate in the epsilon-greedy strategy
     alpha = 0.1  # Learning rate, determining how much new information overrides old information
     epsilon_decay = 0.9  # Decay rate for epsilon, reducing the exploration rate over time
     min_epsilon = 0  # Minimum value to which epsilon can decay, ensuring some level of exploration
-    batch_size = 32  # Size of the batch used for training the neural network in each iteration
-    update_target_network = 50  # Number of episodes after which the target network is updated
+    batch_size = 5  # Size of the batch used for training the neural network in each iteration
+    update_target_network = 5  # Number of episodes after which the target network is updated
 
     # |Miscellaneous settings|
     numb_of_executions = 1  # The number of DQNs trained. If number is > 1 an average fitness curve will be displayed
     save_final_dqn_model = False  # Toggle to save DQN model. Only works if numb_of_executions is 1
     model_name = "TEST"  # The name the model is saved under
     test_set_abs_size = 50  # Only works if numb_of_executions is 1
+    less_comments = True  # Reduce the print statements produced by the algorithm
     print_hyperparameters = True  # Toggle for printing hyperparameters
-    less_comments = False  # Reduce the print statements produced by the algorithm
 
     # |Example configuration (possible only if numb_of_executions == 1)|
     # This is the example that will be displayed as an example of what the system can do
