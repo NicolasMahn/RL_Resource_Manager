@@ -16,8 +16,6 @@ import algorithms.dqn as alg
 # Setting up GPU usage for TensorFlow:
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # Specify GPU index for use
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # Allow dynamic GPU memory allocation
-
-
 # ----------------------------------------------------------------------------------------------------------------------
 
 def main():
@@ -35,7 +33,7 @@ def main():
 
     # |Environment parameters|
     environment = "Resource"  # Choose between the "Time" or "Resource" environment
-    max_numb_of_machines = 3  # Maximum number of machines. Has to be 1 if not "Resource" environment
+    max_numb_of_machines = 2  # Maximum number of machines. Has to be 1 if not "Resource" environment
     max_numb_of_tasks = 10  # Maximum number of tasks
     max_task_depth = 10  # duration of a task ~= random(1,max_task_depth)
     fixed_max_numbers = False
@@ -61,7 +59,7 @@ def main():
     numb_of_executions = 1  # The number of DQNs trained. If number is > 1 an average fitness curve will be displayed
     save_final_dqn_model = False  # Toggle to save DQN model. Only works if numb_of_executions is 1
     model_name = "TEST"  # The name the model is saved under
-    test_set_abs_size = 50  # Only works if numb_of_executions is 1
+    test_set_abs_size = 20  # Only works if numb_of_executions is 1
     less_comments = True  # Reduce the print statements produced by the algorithm
     print_hyperparameters = True  # Toggle for printing hyperparameters
 

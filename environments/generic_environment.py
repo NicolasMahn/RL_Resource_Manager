@@ -69,3 +69,8 @@ class GenericEnvironment:
     def get_possible_actions(self, state):
         # Abstract method to get possible actions in the current state
         raise Exception("get_possible_actions was not properly implemented")
+
+    def get_true_reward(self,state, action, next_state):
+        # Abstract method to calculate the true or actual reward given a state, action, and next state
+        raise Exception("get_true_reward was not properly implemented "
+                        "or it might not be possible with this environemnt.")
