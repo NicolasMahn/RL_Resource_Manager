@@ -11,7 +11,7 @@ randint = np.random.randint
 reward_tracker = RewardTracker()
 
 
-class ResourceManagement(GenericEnvironment):
+class J_t_D_JSSProblem(GenericEnvironment):
 
     def __init__(self, max_numb_of_machines, max_numb_of_tasks, max_task_depth, fixed_max_numbers,
                  high_numb_of_tasks_preference, high_numb_of_machines_preference, test_set):

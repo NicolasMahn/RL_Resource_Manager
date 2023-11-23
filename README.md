@@ -36,7 +36,7 @@ Miscellaneous settings for the number of executions, model saving, and test set 
 **Execution Logic:**
 If only one execution is set, it generates test data and trains a single DQN model.
 If multiple executions are specified, it starts iterating and thus trains a new DQN model each time.
-For an execution an environment (Time or Resource) is set up. Then the dQN model is trained, for which a fitness curve is then later displayed.
+For an execution an environment ([J,m=1|f|min(T)] or [J|t|min(D)]) is set up. Then the dQN model is trained, for which a fitness curve is then later displayed.
 Eventually an Example is executed and visualised with the newly trained DQN model (only if one execution is set).
 
 ### Deep Q-Network (DQN) Implementation
@@ -73,13 +73,82 @@ The implementation is highly customizable, allowing for modifications in network
 
 The environments are located in the `environments` package. Both existing environments are child classes of the `GenericEnvironment` (located in the `generic_environment.py` file). The two child environments are will be explained in further detail in the following paragraphs.
 
-#### Time Management Environment
+#### Environment Name
 
-The `TimeManagement` class is adept at handling situations where tasks must be completed sequentially, making it uniquely suited for problems where task dependencies and order play a significant role.
+The environments are named after German job shop scheduling classification standards. Standards are defined in the [German job shop scheduling classification standards](https://de.wikipedia.org/wiki/Klassifikation_von_Maschinenbelegungsmodellen#Literatur).
+
+##### Classifications
+
+Under this standard, the job shop problem is first divided into 3 classifications:
+
+###### α - Machine characteristics
+
+- **°**: A single available machine
+  - **IP**: Identical parallel machines
+  - **UP**: Uniform parallel machines (with different production speeds)
+  - **F**: Flow-Shop
+  - **J**: Job-Shop
+  - **O**: Open-Shop
+- **α2**: Number of machines
+  - **°**: Any number
+  - **m**: Exactly m machines
+
+###### β - Task characteristics
+
+- **β1**: Number of tasks
+  - **n=const**: A certain number of tasks is predefined. Often n=2.
+  - **°**: Any number
+- **β2**: Interruptibility
+  - **pmtn**: Interruption (eng. Preemption) is possible
+  - **°**: No interruption
+  - **nowait**: After completing a task, the next task must start immediately.
+- **β3**: Sequence relationship
+  - **prec**: Predetermined sequences in the form of a graph
+  - **tree**: Graph in the form of a tree
+  - **°**: No sequence relationships
+- **β4**: Release time and lead time
+  - **aj**: Different task release times
+  - **nj**: Lead times are given. After completing a task, the task must wait a certain time before it can be processed further.
+  - **°**: All tasks are available from the beginning, and there are no lead times
+- **β5**: Processing time
+  - **t** refers to the duration of the processing time of the entire task or the individual tasks
+  - **°**: Any processing times
+- **β6**: Sequence-dependent setup times
+  - **τ**: Sequence-dependent setup time from task j to task k on machine i
+  - **τb**: The tasks can be grouped into families
+  - **°**: No sequence-dependent setup times
+- **β7**: Resource constraints
+  - **res λσρ**
+    - **λ**: Number of resources
+    - **σ**: Availability of resources
+    - **ρ**: Demand for resources
+  - **°**: No resource constraints
+- **β8**: Completion deadlines
+  - **f**: Strict deadlines are given for each task
+  - **°**: No deadlines given
+- **β9**: Number of operations
+  - **g**: Each task consists of exactly/at most n operations
+  - **°**: Any number of operations
+- **β10**: Storage constraints
+  - **κ**: Indicates the available intermediate storage for the i-th machine
+  - **°**: Each machine has a storage with infinite capacity
+
+###### γ - Objective
+
+- **D**: Minimization of throughput time
+- **Z**: Minimization of cycle time / total processing time
+- **T**: Minimization of deadline deviation
+- **V**: Minimization of tardiness
+- **L**: Minimization of idle time
+
+
+#### [J,m=1|f|min(T)] Environment
+
+The `Jm_f_T_JSSProblem` class is adept at handling situations where tasks must be completed sequentially, making it uniquely suited for problems where task dependencies and order play a significant role.
 
 ##### State Representation
 
-In the `TimeManagement` environment, the state is represented as a list of tasks, where each element indicates a task's specific characteristics, such as its duration or priority. Unlike the `ResourceManagement` environment, the order of tasks in this list directly impacts the agent's decision-making process, emphasizing the importance of sequence in task execution.
+In the `Jm_f_T_JSSProblem` environment, the state is represented as a list of tasks, where each element indicates a task's specific characteristics, such as its duration or priority. Unlike the `J_t_D_JSSProblem` environment, the order of tasks in this list directly impacts the agent's decision-making process, emphasizing the importance of sequence in task execution.
 
 ##### Task Scheduling Challenge
 
@@ -87,25 +156,25 @@ The primary challenge in this environment is to determine the most efficient ord
 
 ##### Actions
 
-Actions in the `TimeManagement` environment typically involve selecting a task to execute next. Each action directly influences the state by modifying the order or the set of remaining tasks. The environment may also include actions that represent different strategies for handling task dependencies or varying levels of urgency.
+Actions in the `Jm_f_T_JSSProblem` environment typically involve selecting a task to execute next. Each action directly influences the state by modifying the order or the set of remaining tasks. The environment may also include actions that represent different strategies for handling task dependencies or varying levels of urgency.
 
 ##### Reward Mechanism
 
-The reward function in the `TimeManagement` environment is designed to encourage the timely and efficient completion of tasks. Rewards are typically assigned based on factors such as meeting deadlines, optimizing task order, and efficiently utilizing time. Penalties may be incurred for late task completion or inefficient scheduling, providing a balance of positive and negative incentives to guide the learning process.
+The reward function in the `Jm_f_T_JSSProblem` environment is designed to encourage the timely and efficient completion of tasks. Rewards are typically assigned based on factors such as meeting deadlines, optimizing task order, and efficiently utilizing time. Penalties may be incurred for late task completion or inefficient scheduling, providing a balance of positive and negative incentives to guide the learning process.
 
 ##### Application and Significance
 
-The DQN Agent has been shown to converge (learn) when the `TimeManagement` environment was used. But since the agent, used in this environment, could be replaced with a simple sorting algorithm, its significance is limited, and it only proves that the dqn algorithm is functional.
+The DQN Agent has been shown to converge (learn) when the `Jm_f_T_JSSProblem` environment was used. But since the agent, used in this environment, could be replaced with a simple sorting algorithm, its significance is limited, and it only proves that the dqn algorithm is functional.
 
 
 
-#### Resource Management Environment
+#### [J,m=1|f|min(T)] Environment
 
-The `ResourceManagement` class in our software extends the concept of task scheduling in a complex and dynamic environment. This class is specifically designed to simulate a scenario where tasks, associated with specific durations, need to be allocated to multiple machines with the goal of minimizing overall execution time. This setup presents a practical instance of the classic job-shop scheduling problem, a key challenge in Operations Research.
+The `J_t_D_JSSProblem` class in our software extends the concept of task scheduling in a complex and dynamic environment. This class is specifically designed to simulate a scenario where tasks, associated with specific durations, need to be allocated to multiple machines with the goal of minimizing overall execution time. This setup presents a practical instance of the classic job-shop scheduling problem, a key challenge in Operations Research.
 
 ##### State Representation
 
-A state in the `ResourceManagement` environment is a multidimensional array consisting of:
+A state in the `J_t_D_JSSProblem` environment is a multidimensional array consisting of:
 - A list of tasks, where each number indicates the duration of a task.
 - Multiple lists representing each machine, with non-zero entries indicating assigned tasks.
 - A list indicating the current time step for each machine.
@@ -122,7 +191,7 @@ The environment's transition dynamics are based on the chosen actions. For insta
 
 ##### Initialization
 
-The `ResourceManagement` environment is initialized with parameters like the maximum number of machines and tasks, and task depth. These parameters define the complexity and scale of the scheduling problem. Additional settings, like `high_numb_of_tasks_preference`, allow for fine-tuning the environment to simulate various scenarios.
+The `J_t_D_JSSProblem` environment is initialized with parameters like the maximum number of machines and tasks, and task depth. These parameters define the complexity and scale of the scheduling problem. Additional settings, like `high_numb_of_tasks_preference`, allow for fine-tuning the environment to simulate various scenarios.
 
 ##### Reward Mechanism
 

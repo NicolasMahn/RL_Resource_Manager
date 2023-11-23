@@ -10,7 +10,7 @@ randint = np.random.randint
 weighted_randint = util.weighted_randint
 
 
-class TimeManagement(GenericEnvironment):
+class Jm_f_T_JSSProblem(GenericEnvironment):
 
     def __init__(self, max_numb_of_tasks, max_task_depth, test_set, fixed_max_numbers,
                  high_numb_of_tasks_preference):

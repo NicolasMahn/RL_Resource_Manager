@@ -7,8 +7,8 @@ from resources import util, visualise_results as vis
 from evaluation_monitoring import validation
 from evaluation_monitoring.optimal_algorithm import generate_test_data
 
-from environments.time_management import TimeManagement
-from environments.resource_management import ResourceManagement
+from environments.Jm_f_T_jss_problem import Jm_f_T_JSSProblem
+from environments.J_t_D_jss_problem import J_t_D_JSSProblem
 
 import algorithms.dqn as alg
 
@@ -31,8 +31,78 @@ def main():
     # ------------------------------------------------------------------------------------------------------------------
     # Change Hyperparameters here:
 
+    # |Environment Name|
+    # The environments are named after German job shop scheduling classification standards.
+    # Standards defined here: https://de.wikipedia.org/wiki/Klassifikation_von_Maschinenbelegungsmodellen#Literatur
+    # Under this standard, the job shop problem is first divided into 3 classifications:
+    # α = Machine characteristics
+    # β = Task characteristics
+    # γ = Objective
+    # These classifications are defined by several characteristics (° means "nothing"):
+    # α| Machine characteristics
+    # # α1: Machine type and order
+    # # # °: A single available machine
+    # # # IP: Identical parallel machines
+    # # # UP: Uniform parallel machines (with different production speeds)
+    # # # F: Flow-Shop
+    # # # J: Job-Shop
+    # # # O: Open-Shop
+    # # α2: Number of machines
+    # # # °: Any number
+    # # # m: Exactly m machines
+    # β| Task characteristics
+    # # β1: Number of tasks
+    # # # n=const: A certain number of tasks is predefined. Often n=2.
+    # # # °: Any number
+    # # β2: Interruptibility
+    # # # pmtn: Interruption is possible (Preemption)
+    # # # °: No interruption
+    # # # nowait: After completing a task, the next task must start immediately.
+    # # β3: Sequence relationship
+    # # # prec: Predetermined sequences in the form of a graph
+    # # # tree: Graph in the form of a tree
+    # # # °: No sequence relationships
+    # # β4: Release time and lead time
+    # # # aj: Different task release times
+    # # # nj: Lead times are given. After completing a task, the task must wait before it can be processed further.
+    # # # °: All tasks are available from the beginning, and there are no lead times
+    # # β5: Processing time
+    # # # t refers to the duration of the processing time of the entire task or the individual tasks
+    # # # °: Any processing times
+    # # β6: Sequence-dependent setup times
+    # # # τ: Sequence-dependent setup time from task j to task k on machine i
+    # # # τb: The tasks can be grouped into families
+    # # # °: No sequence-dependent setup times
+    # # β7: Resource constraints
+    # # # res λσρ
+    # # # # λ: Number of resources
+    # # # # σ: Availability of resources
+    # # # # ρ: Demand for resources
+    # # # °: No resource constraints
+    # # β8: Completion deadlines
+    # # # f: Strict deadlines are given for each task
+    # # # °: No deadlines given
+    # # β9: Number of operations
+    # # # g: Each task consists of exactly/at most n operations
+    # # # °: Any number of operations
+    # β10: Storage constraints
+    # # # κ: Indicates the available intermediate storage for the i-th machine
+    # # # °: Each machine has a storage with infinite capacity
+    # γ| Objective
+    # # D: Minimization of throughput time
+    # # Z: Minimization of cycle time / total processing time
+    # # T: Minimization of deadline deviation
+    # # V: Minimization of tardiness
+    # # L: Minimization of idle time
+    # Sofar these environments have been implemented:
+    # [J|t|min(D)] As it is a Job Shop in which the processing time of task, of which only the processing time is known,
+    #              has to be minimized.
+    # [J,m=1|f|min(T)]
+    # [J,m=1||avg(D)]
+
+    environment = "[J|t|min(D)] "  # Choose between the "[J,m=1|f|min(T)]" or "[J|t|min(D)] " environment
+
     # |Environment parameters|
-    environment = "Resource"  # Choose between the "Time" or "Resource" environment
     max_numb_of_machines = 2  # Maximum number of machines. Has to be 1 if not "Resource" environment
     max_numb_of_tasks = 10  # Maximum number of tasks
     max_task_depth = 10  # duration of a task ~= random(1,max_task_depth)
@@ -90,13 +160,13 @@ def main():
         for _ in range(numb_of_executions):
 
             # Environment setup based on selected type
-            if environment == "Time":
-                env = TimeManagement(max_numb_of_tasks, max_task_depth, test_set, fixed_max_numbers,
-                                     high_numb_of_tasks_preference)
+            if environment == "[J,m=1|f|min(T)]":
+                env = Jm_f_T_JSSProblem(max_numb_of_tasks, max_task_depth, test_set, fixed_max_numbers,
+                                        high_numb_of_tasks_preference)
             else:
-                env = ResourceManagement(max_numb_of_machines, max_numb_of_tasks, max_task_depth, fixed_max_numbers,
-                                         high_numb_of_tasks_preference,
-                                         high_numb_of_machines_preference, test_set)
+                env = J_t_D_JSSProblem(max_numb_of_machines, max_numb_of_tasks, max_task_depth, fixed_max_numbers,
+                                       high_numb_of_tasks_preference,
+                                       high_numb_of_machines_preference, test_set)
 
             # Running the Q-learning algorithm
             _, result, _ = alg.q_learning(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_epsilon,
@@ -118,13 +188,13 @@ def main():
     else:  # Single execution logic
 
         # Environment setup based on selected type
-        if environment == "Time":
-            env = TimeManagement(max_numb_of_tasks, max_task_depth, test_set, fixed_max_numbers,
-                                 high_numb_of_tasks_preference)
+        if environment == "[J,m=1|f|min(T)]":
+            env = Jm_f_T_JSSProblem(max_numb_of_tasks, max_task_depth, test_set, fixed_max_numbers,
+                                    high_numb_of_tasks_preference)
         else:
-            env = ResourceManagement(max_numb_of_machines, max_numb_of_tasks, max_task_depth, fixed_max_numbers,
-                                     high_numb_of_tasks_preference,
-                                     high_numb_of_machines_preference, test_set)
+            env = J_t_D_JSSProblem(max_numb_of_machines, max_numb_of_tasks, max_task_depth, fixed_max_numbers,
+                                   high_numb_of_tasks_preference,
+                                   high_numb_of_machines_preference, test_set)
 
         #  Running the Q-learning algorithm
         dqn_model, fitness_curve, pretraining_dqn_model = alg.q_learning(env, episodes, gamma, epsilon, alpha,
@@ -137,7 +207,7 @@ def main():
         print("\n")
 
         # Environment-specific accuracy computation and visualization
-        if environment == "Time":
+        if environment == "[J,m=1|f|min(T)]":
             print(f"The accuracy of the algorithm is: {validation.time_dqn(test_set, env, dqn_model)}%")
             print("This shows the average correctly assorted tasks")
         else:
@@ -150,7 +220,7 @@ def main():
 
         # Example execution and visualization
         print("THE EXAMPLE ")
-        if environment != "Time":
+        if environment != "[J,m=1|f|min(T)]":
             print("The Tasks:")
             vis.visualise_tasks(tasks)
         optimal_policy = alg.get_pi_from_q(env, dqn_model, tasks, numb_of_machines, less_comments)

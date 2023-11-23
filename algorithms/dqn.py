@@ -201,5 +201,3 @@ def q_learning(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_epsilon,
         return dqn_model, fitness_curve, pretrained_dqn_model
     else:
         return dqn_model, fitness_curve
-
-
