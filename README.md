@@ -17,6 +17,7 @@ The software comprises several key components, outlined as follows:
 **test_sets:** Used for storing data pertinent to the evaluation of the DQN model.
 ## Implementation Details
 This software is solely an implementation of the DQN code. It is structured to facilitate easy customization and execution of RL strategies within the realm of Job Shop Scheduling. The system's architecture is designed to be modular, allowing for flexible adaptation and scaling according to specific scheduling scenarios and requirements.
+To run this Program opptimaly a GPU should be used with linux or wsl. The other requirements can be found in the `conda_backup.yaml` or `requirements.txt`.
 
 ## Detailed Explanation
 
