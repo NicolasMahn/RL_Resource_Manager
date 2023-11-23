@@ -37,7 +37,7 @@ Miscellaneous settings for the number of executions, model saving, and test set 
 **Execution Logic:**
 If only one execution is set, it generates test data and trains a single DQN model.
 If multiple executions are specified, it starts iterating and thus trains a new DQN model each time.
-For an execution an environment ([J,m=1|f|min(T)] or [J|t|min(D)]) is set up. Then the dQN model is trained, for which a fitness curve is then later displayed.
+For an execution an environment ([J,m=1|nowait,f|min(T)] or [J|nowait,t|min(D)]) is set up. Then the dQN model is trained, for which a fitness curve is then later displayed.
 Eventually an Example is executed and visualised with the newly trained DQN model (only if one execution is set).
 
 ### Deep Q-Network (DQN) Implementation
@@ -143,7 +143,7 @@ Under this standard, the job shop problem is first divided into 3 classification
 - **L**: Minimization of idle time
 
 
-#### [J,m=1|f|min(T)] Environment
+#### [J,m=1|nowait,f|min(T)] Environment
 
 The `Jm_f_T_JSSProblem` class is adept at handling situations where tasks must be completed sequentially, making it uniquely suited for problems where task dependencies and order play a significant role.
 
@@ -169,7 +169,7 @@ The DQN Agent has been shown to converge (learn) when the `Jm_f_T_JSSProblem` en
 
 
 
-#### [J,m=1|f|min(T)] Environment
+#### [J|nowait,t|min(D)] Environment
 
 The `J_t_D_JSSProblem` class in our software extends the concept of task scheduling in a complex and dynamic environment. This class is specifically designed to simulate a scenario where tasks, associated with specific durations, need to be allocated to multiple machines with the goal of minimizing overall execution time. This setup presents a practical instance of the classic job-shop scheduling problem, a key challenge in Operations Research.
 

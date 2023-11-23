@@ -95,12 +95,13 @@ def main():
     # # V: Minimization of tardiness
     # # L: Minimization of idle time
     # Sofar these environments have been implemented:
-    # [J|t|min(D)] As it is a Job Shop in which the processing time of task, of which only the processing time is known,
-    #              has to be minimized.
-    # [J,m=1|f|min(T)]
-    # [J,m=1||avg(D)]
+    # [J|nowait,t|min(D)] As it is a Job Shop in which the processing time of task, of which only the processing
+    #                     time is known, has to be minimized.
+    # [J,m=1|nowait,f|min(T)]
+    # [J,m=1|pmtn,nowait,prec,tree,nj,t,f|avg(D)] # TODO
 
-    environment = "[J|t|min(D)] "  # Choose between the "[J,m=1|f|min(T)]" or "[J|t|min(D)] " environment
+    environment = "[J|nowait,t|min(D)] "  # Choose between the "[J,m=1|nowait,f|min(T)]", or
+    #                                                          "[J|nowait,t|min(D)] " environment
 
     # |Environment parameters|
     max_numb_of_machines = 2  # Maximum number of machines. Has to be 1 if not "Resource" environment
@@ -160,7 +161,7 @@ def main():
         for _ in range(numb_of_executions):
 
             # Environment setup based on selected type
-            if environment == "[J,m=1|f|min(T)]":
+            if environment == "[J,m=1|nowait,f|min(T)]":
                 env = Jm_f_T_JSSProblem(max_numb_of_tasks, max_task_depth, test_set, fixed_max_numbers,
                                         high_numb_of_tasks_preference)
             else:
@@ -188,7 +189,7 @@ def main():
     else:  # Single execution logic
 
         # Environment setup based on selected type
-        if environment == "[J,m=1|f|min(T)]":
+        if environment == "[J,m=1|nowait,f|min(T)]":
             env = Jm_f_T_JSSProblem(max_numb_of_tasks, max_task_depth, test_set, fixed_max_numbers,
                                     high_numb_of_tasks_preference)
         else:
@@ -207,7 +208,7 @@ def main():
         print("\n")
 
         # Environment-specific accuracy computation and visualization
-        if environment == "[J,m=1|f|min(T)]":
+        if environment == "[J,m=1|nowait,f|min(T)]":
             print(f"The accuracy of the algorithm is: {validation.time_dqn(test_set, env, dqn_model)}%")
             print("This shows the average correctly assorted tasks")
         else:
@@ -220,7 +221,7 @@ def main():
 
         # Example execution and visualization
         print("THE EXAMPLE ")
-        if environment != "[J,m=1|f|min(T)]":
+        if environment != "[J,m=1|nowait,f|min(T)]":
             print("The Tasks:")
             vis.visualise_tasks(tasks)
         optimal_policy = alg.get_pi_from_q(env, dqn_model, tasks, numb_of_machines, less_comments)
