@@ -49,12 +49,24 @@ class J_t_D_JSSProblem(GenericEnvironment):
         super().__init__(dimensions=dimensions, actions=actions,
                          start_state=np.zeros(max_numb_of_machines + max_numb_of_tasks))
 
-
     def get_specific_state(self, tasks, numb_of_machines):
         # Function to get a specific state based on tasks and number of machines
         self.numb_of_tasks = len(tasks)
         self.numb_of_machines = numb_of_machines
         self.tasks = tasks
+        self.current_max_time = sum([task for task in self.tasks])
+        self.current_cumulative_machines = np.zeros(self.numb_of_machines)
+
+        start_state = [np.pad(self.tasks, (0, self.current_max_time - len(self.tasks)), constant_values=0)]
+        start_state.extend([[0] * self.current_max_time for _ in range(self.numb_of_machines)])
+        start_state.append(np.zeros(self.current_max_time, dtype=int))
+        return list(start_state)
+
+    def get_specific_state_list(self, list_):
+        # Function to get a specific state based on tasks and number of machines
+        self.numb_of_tasks = len(list_[0])
+        self.numb_of_machines = list_[1]
+        self.tasks = list_[0]
         self.current_max_time = sum([task for task in self.tasks])
         self.current_cumulative_machines = np.zeros(self.numb_of_machines)
 

@@ -26,7 +26,7 @@ def restore_stdout(stdout_orig):
     sys.stdout = stdout_orig
 
 
-def get_pi_from_q(env, dqn_model, tasks, numb_of_machines, less_comments=False):
+def get_pi_from_q(env, dqn_model, initial_state, less_comments=False):
     # If toggled the standard output is restricted to suppress unwanted output
     if less_comments:
         stdout = redirect_stdout()
@@ -34,7 +34,7 @@ def get_pi_from_q(env, dqn_model, tasks, numb_of_machines, less_comments=False):
     optimal_policy = []
 
     # Initial state
-    state = env.get_specific_state(tasks, numb_of_machines)
+    state = initial_state
 
     while not env.done(state):
         # Get Q-values for all actions from DQN model

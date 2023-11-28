@@ -40,9 +40,17 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
         # Call to superclass constructor
         super().__init__(dimensions=dimensions, actions=actions, start_state=np.zeros(max_numb_of_tasks))
 
-    def get_specific_state(self, tasks, _):
+    def get_specific_state(self, tasks):
         # Function to get a specific state based on provided tasks
         self.tasks = tasks
+        self.numb_of_tasks = len(self.tasks)
+        self.result = np.zeros(self.numb_of_tasks, dtype=int)
+
+        return list([self.tasks, self.result])
+
+    def get_specific_state_list(self, list_):
+        # Function to get a specific state based on provided tasks
+        self.tasks = list_[0]
         self.numb_of_tasks = len(self.tasks)
         self.result = np.zeros(self.numb_of_tasks, dtype=int)
 

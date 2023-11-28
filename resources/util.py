@@ -153,3 +153,32 @@ def generate_tasks(max_task_depth, numb_of_tasks, test_set_tasks=None):
     task_array = np.random.choice(tasks, size=numb_of_tasks)
 
     return task_array.tolist()  # Convert numpy array to list
+
+
+def validate_child_elements(sequence):
+
+    # Ensure initial condition: element not equal to its index
+    np.random.shuffle(sequence)
+    for i in range(len(sequence)):
+        while sequence[i] == i:
+            np.random.shuffle(sequence)
+
+    # Additional check for ring condition
+    def forms_ring(seq):
+        for start in range(len(seq)):
+            visited = set()
+            current = start
+            while True:
+                if current in visited:
+                    return current == start
+                visited.add(current)
+                current = seq[current]
+
+    # Shuffle until the ring condition is met
+    while forms_ring(sequence):
+        np.random.shuffle(sequence)
+        for i in range(len(sequence)):
+            while sequence[i] == i:
+                np.random.shuffle(sequence)
+
+    return sequence

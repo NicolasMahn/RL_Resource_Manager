@@ -8,7 +8,8 @@ def time_dqn(test_set, env, dqn_model, less_comments):
     sortedness_list = []
     for item in test_set:
         # Calculate the optimal policy for each test set item
-        _ = alg.get_pi_from_q(env, dqn_model, item["tasks"], item["numb_of_machines"], less_comments)
+        _ = alg.get_pi_from_q(env, dqn_model, env.get_specific_state(item["tasks"]),
+                              less_comments)
         result = env.get_result()
         # Append the sortedness percentage of the result
         sortedness_list.append(sortedness_percentage(result[0]))
@@ -21,7 +22,8 @@ def resource_dqn(test_set, env, dqn_model, less_comments):
     optimal_time_list = []
     for item in test_set:
         # Obtain the optimal policy for each test set item
-        policy = alg.get_pi_from_q(env, dqn_model, item["tasks"], item["numb_of_machines"], less_comments)
+        policy = alg.get_pi_from_q(env, dqn_model, env.get_specific_state(item["tasks"], item["numb_of_machines"]),
+                                   less_comments)
         # Append the time taken by the policy and the optimal time
         time_list.append(util.time_from_policy(env, policy))
         optimal_time_list.append(item["time"])

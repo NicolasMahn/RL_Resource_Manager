@@ -1,5 +1,6 @@
 import tqdm
 import tensorflow as tf
+import numpy as np
 import os
 
 from resources import util, visualise_results as vis
@@ -9,6 +10,7 @@ from evaluation_monitoring.optimal_algorithm import generate_test_data
 
 from environments.Jm_f_T_jss_problem import Jm_f_T_JSSProblem
 from environments.J_t_D_jss_problem import J_t_D_JSSProblem
+from environments.Jm_tf_T_jss_problem import Jm_tf_T_JSSProblem
 
 import algorithms.dqn as alg
 
@@ -18,7 +20,9 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # Specify GPU index for use
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # Allow dynamic GPU memory allocation
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def main():
+
     # Check and print GPU availability
     gpus = tf.config.list_physical_devices('GPU')
     if gpus:
@@ -98,14 +102,14 @@ def main():
     # [J|nowait,t|min(D)] As it is a Job Shop in which the processing time of task, of which only the processing
     #                     time is known, has to be minimized.
     # [J,m=1|nowait,f|min(T)]
-    # [J,m=1|pmtn,nowait,prec,tree,nj,t,f|avg(D)] # TODO
+    # [J,m=1|pmtn,nowait,tree,nj,t,f|avg(T)] # In Progress may be buggy
 
-    environment = "[J|nowait,t|min(D)] "  # Choose between the "[J,m=1|nowait,f|min(T)]", or
+    environment = "[J,m=1|pmtn,nowait,tree,nj,t,f|avg(T)]"  # Choose between the "[J,m=1|nowait,f|min(T)]", or
     #                                                          "[J|nowait,t|min(D)] " environment
 
     # |Environment parameters|
     max_numb_of_machines = 2  # Maximum number of machines. Has to be 1 if not "Resource" environment
-    max_numb_of_tasks = 10  # Maximum number of tasks
+    max_numb_of_tasks = 9  # Maximum number of tasks
     max_task_depth = 10  # duration of a task ~= random(1,max_task_depth)
     fixed_max_numbers = False
     # Toggle whether the number of tasks or machines should stay the same for each training scenario
@@ -140,6 +144,7 @@ def main():
     numb_of_machines = 2  # Specific to "Resource" environment
     # ------------------------------------------------------------------------------------------------------------------
 
+
     # Execution logic based on the number of runs specified
     if numb_of_executions == 1:
         print("\nTraining the DQN model...")
@@ -164,6 +169,8 @@ def main():
             if environment == "[J,m=1|nowait,f|min(T)]":
                 env = Jm_f_T_JSSProblem(max_numb_of_tasks, max_task_depth, test_set, fixed_max_numbers,
                                         high_numb_of_tasks_preference)
+            elif environment == "[J,m=1|pmtn,nowait,tree,nj,t,f|avg(T)]":
+                env = Jm_tf_T_JSSProblem(max_numb_of_tasks, test_set, fixed_max_numbers, high_numb_of_tasks_preference)
             else:
                 env = J_t_D_JSSProblem(max_numb_of_machines, max_numb_of_tasks, max_task_depth, fixed_max_numbers,
                                        high_numb_of_tasks_preference,
@@ -192,6 +199,8 @@ def main():
         if environment == "[J,m=1|nowait,f|min(T)]":
             env = Jm_f_T_JSSProblem(max_numb_of_tasks, max_task_depth, test_set, fixed_max_numbers,
                                     high_numb_of_tasks_preference)
+        elif environment == "[J,m=1|pmtn,nowait,tree,nj,t,f|avg(T)]":
+            env = Jm_tf_T_JSSProblem(max_numb_of_tasks, test_set, fixed_max_numbers, high_numb_of_tasks_preference)
         else:
             env = J_t_D_JSSProblem(max_numb_of_machines, max_numb_of_tasks, max_task_depth, fixed_max_numbers,
                                    high_numb_of_tasks_preference,
@@ -209,8 +218,10 @@ def main():
 
         # Environment-specific accuracy computation and visualization
         if environment == "[J,m=1|nowait,f|min(T)]":
-            print(f"The accuracy of the algorithm is: {validation.time_dqn(test_set, env, dqn_model)}%")
+            print(f"The accuracy of the algorithm is: {validation.time_dqn(test_set, env, dqn_model, less_comments)}%")
             print("This shows the average correctly assorted tasks")
+        elif environment == "[J,m=1|pmtn,nowait,tree,nj,t,f|avg(T)]":
+            print("No validation for this environment exists yet")
         else:
             print(f"The accuracy of the algorithm is: "
                   f"{validation.resource_dqn(test_set, env, dqn_model, less_comments)}/"
@@ -219,15 +230,17 @@ def main():
             print("The second number is the RMSE of the untrained NN")
         print("")
 
-        # Example execution and visualization
-        print("THE EXAMPLE ")
-        if environment != "[J,m=1|nowait,f|min(T)]":
-            print("The Tasks:")
-            vis.visualise_tasks(tasks)
-        optimal_policy = alg.get_pi_from_q(env, dqn_model, tasks, numb_of_machines, less_comments)
-        print("\nThe DQN recommended policy:")
-        vis.visualise_results(optimal_policy, env)
-        print("\n")
+        if environment != "[J,m=1|pmtn,nowait,tree,nj,t,f|avg(T)]":
+            # Example execution and visualization
+            print("THE EXAMPLE ")
+            if environment != "[J,m=1|nowait,f|min(T)]":
+                print("The Tasks:")
+                vis.visualise_tasks(tasks)
+            optimal_policy = alg.get_pi_from_q(env, dqn_model, env.get_specific_state_list([tasks, numb_of_machines]),
+                                               less_comments)
+            print("\nThe DQN recommended policy:")
+            vis.visualise_results(optimal_policy, env)
+            print("\n")
 
         # Model saving logic
         if save_final_dqn_model:
