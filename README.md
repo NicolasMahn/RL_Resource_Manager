@@ -66,6 +66,8 @@ Eventually an Example is executed and visualised with the newly trained DQN mode
 Deep Q-Networks merge the traditional Q-Learning approach with deep neural networks to efficiently handle complex, high-dimensional state-action spaces without the need for discretization. This makes DQN an ideal choice for our scheduling tasks, where the parameters can vary widely, creating a vast and continuous space of possibilities.
 The DQN is located inside the `algorithms` package. The main algorithm is located in the `dqn.py` file, while the replay buffer class is located in the `replay_buffer.py` file.
 
+<details>
+
 #### Key Components
 
 **DQN Model:** Constructed using Keras, the model comprises several dense layers activated by ReLU and a softmax output layer for action selection. The model's architecture is designed to extract deep features from the input state and provide a probability distribution over possible actions.
@@ -90,8 +92,9 @@ To ensure stability in the learning process, a target network, mirroring the DQN
 
 The implementation is highly customizable, allowing for modifications in network architecture, hyperparameters, and training procedures. This flexibility ensures that the software can adapt to a wide range of scheduling scenarios.
 
----
-### Environments
+</details>
+
+## Environments
 
 The environments are located in the `environments` package. Both existing environments are child classes of the `GenericEnvironment` (located in the `generic_environment.py` file). The two child environments are will be explained in further detail in the following paragraphs.
 
