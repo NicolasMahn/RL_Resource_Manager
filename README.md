@@ -82,66 +82,68 @@ The environments are named after German job shop scheduling classification stand
 
 Under this standard, the job shop problem is first divided into 3 classifications:
 
-###### α - Machine characteristics
+<details>
+  ###### α - Machine characteristics
 
-- **°**: A single available machine
-  - **IP**: Identical parallel machines
-  - **UP**: Uniform parallel machines (with different production speeds)
-  - **F**: Flow-Shop
-  - **J**: Job-Shop
-  - **O**: Open-Shop
-- **α2**: Number of machines
-  - **°**: Any number
-  - **m**: Exactly m machines
+  - **α1**: Machine type and arrangement
+    - **°**: A single available machine
+    - **IP**: Identical parallel machines
+    - **UP**: Uniform parallel machines (with different production speeds)
+    - **F**: Flow-Shop
+    - **J**: Job-Shop
+    - **O**: Open-Shop
+  - **α2**: Number of machines
+    - **°**: Any number
+    - **m**: Exactly m machines
 
-###### β - Task characteristics
+  ###### β - Task characteristics
 
-- **β1**: Number of tasks
-  - **n=const**: A certain number of tasks is predefined. Often n=2.
-  - **°**: Any number
-- **β2**: Interruptibility
-  - **pmtn**: Interruption (eng. Preemption) is possible
-  - **°**: No interruption
-  - **nowait**: After completing a task, the next task must start immediately.
-- **β3**: Sequence relationship
-  - **prec**: Predetermined sequences in the form of a graph
-  - **tree**: Graph in the form of a tree
-  - **°**: No sequence relationships
-- **β4**: Release time and lead time
-  - **aj**: Different task release times
-  - **nj**: Lead times are given. After completing a task, the task must wait a certain time before it can be processed further.
-  - **°**: All tasks are available from the beginning, and there are no lead times
-- **β5**: Processing time
-  - **t** refers to the duration of the processing time of the entire task or the individual tasks
-  - **°**: Any processing times
-- **β6**: Sequence-dependent setup times
-  - **τ**: Sequence-dependent setup time from task j to task k on machine i
-  - **τb**: The tasks can be grouped into families
-  - **°**: No sequence-dependent setup times
-- **β7**: Resource constraints
-  - **res λσρ**
-    - **λ**: Number of resources
-    - **σ**: Availability of resources
-    - **ρ**: Demand for resources
-  - **°**: No resource constraints
-- **β8**: Completion deadlines
-  - **f**: Strict deadlines are given for each task
-  - **°**: No deadlines given
-- **β9**: Number of operations
-  - **g**: Each task consists of exactly/at most n operations
-  - **°**: Any number of operations
-- **β10**: Storage constraints
-  - **κ**: Indicates the available intermediate storage for the i-th machine
-  - **°**: Each machine has a storage with infinite capacity
+  - **β1**: Number of tasks
+    - **n=const**: A certain number of tasks is predefined. Often n=2.
+    - **°**: Any number
+  - **β2**: Interruptibility
+    - **pmtn**: Interruption (eng. Preemption) is possible
+    - **°**: No interruption
+    - **nowait**: After completing a task, the next task must start immediately.
+  - **β3**: Sequence relationship
+    - **prec**: Predetermined sequences in the form of a graph
+    - **tree**: Graph in the form of a tree
+    - **°**: No sequence relationships
+  - **β4**: Release time and lead time
+    - **aj**: Different task release times
+    - **nj**: Lead times are given. After completing a task, the task must wait a certain time before it can be processed further.
+    - **°**: All tasks are available from the beginning, and there are no lead times
+  - **β5**: Processing time
+    - **t** refers to the duration of the processing time of the entire task or the individual tasks
+    - **°**: Any processing times
+  - **β6**: Sequence-dependent setup times
+    - **τ**: Sequence-dependent setup time from task j to task k on machine i
+    - **τb**: The tasks can be grouped into families
+    - **°**: No sequence-dependent setup times
+  - **β7**: Resource constraints
+    - **res λσρ**
+      - **λ**: Number of resources
+      - **σ**: Availability of resources
+      - **ρ**: Demand for resources
+    - **°**: No resource constraints
+  - **β8**: Completion deadlines
+    - **f**: Strict deadlines are given for each task
+    - **°**: No deadlines given
+  - **β9**: Number of operations
+    - **g**: Each task consists of exactly/at most n operations
+    - **°**: Any number of operations
+  - **β10**: Storage constraints
+    - **κ**: Indicates the available intermediate storage for the i-th machine
+    - **°**: Each machine has a storage with infinite capacity
 
-###### γ - Objective
+  ###### γ - Objective
 
-- **D**: Minimization of throughput time
-- **Z**: Minimization of cycle time / total processing time
-- **T**: Minimization of deadline deviation
-- **V**: Minimization of tardiness
-- **L**: Minimization of idle time
-
+  - **D**: Minimization of throughput time
+  - **Z**: Minimization of cycle time / total processing time
+  - **T**: Minimization of deadline deviation
+  - **V**: Minimization of tardiness
+  - **L**: Minimization of idle time
+</details>
 
 #### [J,m=1|nowait,f|min(T)] Environment
 
