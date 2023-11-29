@@ -1,6 +1,8 @@
 # Reinforcement Learning Resource Management
 - [Abstract](#Abstract)
-- [Environments](#env)
+- [Getting started](#getting-started)
+- [Software Structure](#Software-structure)
+- [Environments](#Environments)
 ## Abstract
 This software, "Reinforcement Learning Resource Management", is an implementation focused on integrating Q-Learning, a Reinforcement Learning (RL) method, into Job Shop Scheduling (JSS). RL is a subfield of artificial intelligence, characterized by learning from interaction with an environment, using rewards or penalties. This project particularly employs Q-Learning, a model-free algorithm, allowing the agent to learn optimal policies without prior knowledge of the environment's dynamics. The core application of this technique is in JSS, illustrating its utility in scheduling tasks based on due dates and other critical parameters. The project also delves into Deep Q-Learning, extending the application's scope and efficacy in complex scheduling environments.
 
@@ -10,8 +12,10 @@ In this section you can find all information needed to run the software on your 
 <details>
 
 ### Basic requirements
-- If you use a windows machine you will have to install WSL
-- We use 'python version 3.10'
+- If you use a windows machine you will have to install **WSL**
+- We use the `python version 3.10`
+- You can install all required packages either as a conda environment using the `conda_backup.yaml` file or you can use the
+`requirements.txt` file to create a python virtual environment.
 
 </details>
 
@@ -36,6 +40,8 @@ To run this Program opptimaly a GPU should be used with linux or wsl. The other 
 
 ### Main File
 
+<details>
+
 Listed here are the functions that are executed in the main file, which mainly consists of the main function which executes all the other scripts.
 The script is designed to be run as a standalone program.
 
@@ -52,6 +58,8 @@ If only one execution is set, it generates test data and trains a single DQN mod
 If multiple executions are specified, it starts iterating and thus trains a new DQN model each time.
 For an execution an environment ([J,m=1|nowait,f|min(T)] or [J|nowait,t|min(D)]) is set up. Then the dQN model is trained, for which a fitness curve is then later displayed.
 Eventually an Example is executed and visualised with the newly trained DQN model (only if one execution is set).
+
+</details>
 
 ### Deep Q-Network (DQN) Implementation
 
@@ -83,7 +91,7 @@ To ensure stability in the learning process, a target network, mirroring the DQN
 The implementation is highly customizable, allowing for modifications in network architecture, hyperparameters, and training procedures. This flexibility ensures that the software can adapt to a wide range of scheduling scenarios.
 
 
-### Environments {#env}
+### Environments
 
 The environments are located in the `environments` package. Both existing environments are child classes of the `GenericEnvironment` (located in the `generic_environment.py` file). The two child environments are will be explained in further detail in the following paragraphs.
 
@@ -96,6 +104,10 @@ The environments are named after German job shop scheduling classification stand
 Under this standard, the job shop problem is first divided into 3 classifications:
 
 <details>
+  <summary>Classifications</summary>
+
+  Under this standard, the job shop problem is first divided into 3 classifications:
+
   <b>α - Machine characteristics</b>
 
   - **α1**: Machine type and arrangement
