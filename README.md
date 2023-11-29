@@ -90,7 +90,7 @@ To ensure stability in the learning process, a target network, mirroring the DQN
 
 The implementation is highly customizable, allowing for modifications in network architecture, hyperparameters, and training procedures. This flexibility ensures that the software can adapt to a wide range of scheduling scenarios.
 
-
+---
 ### Environments
 
 The environments are located in the `environments` package. Both existing environments are child classes of the `GenericEnvironment` (located in the `generic_environment.py` file). The two child environments are will be explained in further detail in the following paragraphs.
@@ -99,12 +99,9 @@ The environments are located in the `environments` package. Both existing enviro
 
 The environments are named after German job shop scheduling classification standards. Standards are defined in the [German job shop scheduling classification standards](https://de.wikipedia.org/wiki/Klassifikation_von_Maschinenbelegungsmodellen#Literatur).
 
-##### Classifications
-
-Under this standard, the job shop problem is first divided into 3 classifications:
 
 <details>
-  <summary>Classifications</summary>
+  <summary>More information on the classifications</summary>
 
   Under this standard, the job shop problem is first divided into 3 classifications:
 
@@ -199,7 +196,7 @@ The DQN Agent has been shown to converge (learn) when the `Jm_f_T_JSSProblem` en
 </details>
 
 
-#### [J|nowait,t|min(D)] Environment
+#### [J|nowait,t,gj=1|min(D)] Environment
 
 The `J_t_D_JSSProblem` class in our software extends the concept of task scheduling in a complex and dynamic environment. This class is specifically designed to simulate a scenario where tasks, associated with specific durations, need to be allocated to multiple machines with the goal of minimizing overall execution time. This setup presents a practical instance of the classic job-shop scheduling problem, a key challenge in Operations Research.
 
