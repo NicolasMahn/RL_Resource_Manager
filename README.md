@@ -1,7 +1,7 @@
 # Reinforcement Learning Resource Management
-[Abstract](#abstract)
-[Environments](#env)
-## Abstract {#abstract}
+- [Abstract](#Abstract)
+- [Environments](#env)
+## Abstract
 This software, "Reinforcement Learning Resource Management", is an implementation focused on integrating Q-Learning, a Reinforcement Learning (RL) method, into Job Shop Scheduling (JSS). RL is a subfield of artificial intelligence, characterized by learning from interaction with an environment, using rewards or penalties. This project particularly employs Q-Learning, a model-free algorithm, allowing the agent to learn optimal policies without prior knowledge of the environment's dynamics. The core application of this technique is in JSS, illustrating its utility in scheduling tasks based on due dates and other critical parameters. The project also delves into Deep Q-Learning, extending the application's scope and efficacy in complex scheduling environments.
 
 ## Getting started
