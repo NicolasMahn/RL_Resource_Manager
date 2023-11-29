@@ -83,8 +83,7 @@ The environments are named after German job shop scheduling classification stand
 Under this standard, the job shop problem is first divided into 3 classifications:
 
 <details>
-  <h3>Test</h3>
-  ###### α - Machine characteristics
+  <b>α - Machine characteristics</b>
 
   - **α1**: Machine type and arrangement
     - **°**: A single available machine
@@ -97,7 +96,7 @@ Under this standard, the job shop problem is first divided into 3 classification
     - **°**: Any number
     - **m**: Exactly m machines
 
-  ###### β - Task characteristics
+  <b>β - Task characteristics</b>
 
   - **β1**: Number of tasks
     - **n=const**: A certain number of tasks is predefined. Often n=2.
@@ -137,19 +136,21 @@ Under this standard, the job shop problem is first divided into 3 classification
     - **κ**: Indicates the available intermediate storage for the i-th machine
     - **°**: Each machine has a storage with infinite capacity
 
-  ###### γ - Objective
+  <b>γ - Objective</b>
 
   - **D**: Minimization of throughput time
   - **Z**: Minimization of cycle time / total processing time
   - **T**: Minimization of deadline deviation
   - **V**: Minimization of tardiness
   - **L**: Minimization of idle time
+
 </details>
 
-#### [J,m=1|nowait,f|min(T)] Environment
+#### [J,m=1|nowait,f,gj=1|min(T)] Environment
 
 The `Jm_f_T_JSSProblem` class is adept at handling situations where tasks must be completed sequentially, making it uniquely suited for problems where task dependencies and order play a significant role.
 
+<details>
 ##### State Representation
 
 In the `Jm_f_T_JSSProblem` environment, the state is represented as a list of tasks, where each element indicates a task's specific characteristics, such as its duration or priority. Unlike the `J_t_D_JSSProblem` environment, the order of tasks in this list directly impacts the agent's decision-making process, emphasizing the importance of sequence in task execution.
@@ -169,7 +170,7 @@ The reward function in the `Jm_f_T_JSSProblem` environment is designed to encour
 ##### Application and Significance
 
 The DQN Agent has been shown to converge (learn) when the `Jm_f_T_JSSProblem` environment was used. But since the agent, used in this environment, could be replaced with a simple sorting algorithm, its significance is limited, and it only proves that the dqn algorithm is functional.
-
+</details>
 
 
 #### [J|nowait,t|min(D)] Environment
