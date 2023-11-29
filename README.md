@@ -1,6 +1,19 @@
 # Reinforcement Learning Resource Management
-## Abstract
+[Abstract](#abstract)
+[Environments](#env)
+## Abstract {#abstract}
 This software, "Reinforcement Learning Resource Management", is an implementation focused on integrating Q-Learning, a Reinforcement Learning (RL) method, into Job Shop Scheduling (JSS). RL is a subfield of artificial intelligence, characterized by learning from interaction with an environment, using rewards or penalties. This project particularly employs Q-Learning, a model-free algorithm, allowing the agent to learn optimal policies without prior knowledge of the environment's dynamics. The core application of this technique is in JSS, illustrating its utility in scheduling tasks based on due dates and other critical parameters. The project also delves into Deep Q-Learning, extending the application's scope and efficacy in complex scheduling environments.
+
+## Getting started
+In this section you can find all information needed to run the software on your own machine.
+
+<details>
+
+### Basic requirements
+- If you use a windows machine you will have to install WSL
+- We use 'python version 3.10'
+
+</details>
 
 ## Software Structure
 The software comprises several key components, outlined as follows:
@@ -70,7 +83,7 @@ To ensure stability in the learning process, a target network, mirroring the DQN
 The implementation is highly customizable, allowing for modifications in network architecture, hyperparameters, and training procedures. This flexibility ensures that the software can adapt to a wide range of scheduling scenarios.
 
 
-### Environments
+### Environments {#env}
 
 The environments are located in the `environments` package. Both existing environments are child classes of the `GenericEnvironment` (located in the `generic_environment.py` file). The two child environments are will be explained in further detail in the following paragraphs.
 
@@ -178,6 +191,8 @@ The DQN Agent has been shown to converge (learn) when the `Jm_f_T_JSSProblem` en
 
 The `J_t_D_JSSProblem` class in our software extends the concept of task scheduling in a complex and dynamic environment. This class is specifically designed to simulate a scenario where tasks, associated with specific durations, need to be allocated to multiple machines with the goal of minimizing overall execution time. This setup presents a practical instance of the classic job-shop scheduling problem, a key challenge in Operations Research.
 
+<details>
+
 ##### State Representation
 
 A state in the `J_t_D_JSSProblem` environment is a multidimensional array consisting of:
@@ -206,3 +221,5 @@ The reward function is designed to incentivize efficient scheduling. It provides
 ##### Results and Implications
 
 The results of this environment have sofar been lack luster. This environment should be seen as a work in progress
+
+</details>
