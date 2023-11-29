@@ -83,6 +83,7 @@ The environments are named after German job shop scheduling classification stand
 Under this standard, the job shop problem is first divided into 3 classifications:
 
 <details>
+  <h3>Test</h3>
   ###### α - Machine characteristics
 
   - **α1**: Machine type and arrangement
