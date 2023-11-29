@@ -151,6 +151,7 @@ Under this standard, the job shop problem is first divided into 3 classification
 The `Jm_f_T_JSSProblem` class is adept at handling situations where tasks must be completed sequentially, making it uniquely suited for problems where task dependencies and order play a significant role.
 
 <details>
+
 ##### State Representation
 
 In the `Jm_f_T_JSSProblem` environment, the state is represented as a list of tasks, where each element indicates a task's specific characteristics, such as its duration or priority. Unlike the `J_t_D_JSSProblem` environment, the order of tasks in this list directly impacts the agent's decision-making process, emphasizing the importance of sequence in task execution.
