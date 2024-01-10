@@ -57,4 +57,7 @@ werkzeug==3.0.1
 wrapt==1.15.0
 zipp==3.17.0
 tensorrt
-pandas
+pandas~=2.1.4
+tqdm~=4.66.1
+tensorflow~=2.14.0
+matplotlib~=3.8.1

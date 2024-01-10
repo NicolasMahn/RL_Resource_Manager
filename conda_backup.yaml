@@ -60,3 +60,4 @@ dependencies:
       - zipp==3.17.0
       - tensorrt
       - pandas
+      - tqdm~=4.66.1

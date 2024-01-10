@@ -3,7 +3,7 @@ import math
 import algorithms.dqn as alg
 import resources.util as util
 
-def time_dqn(test_set, env, dqn_model, less_comments):
+def get_Jm_f_T_jss_problem_accurcy(test_set, env, dqn_model, less_comments):
     # Evaluates the performance of a DQN model in a time management scenario
     sortedness_list = []
     for item in test_set:
@@ -16,7 +16,7 @@ def time_dqn(test_set, env, dqn_model, less_comments):
     # Return the average sortedness percentage over the test set
     return sum(sortedness_list) / len(sortedness_list)
 
-def resource_dqn(test_set, env, dqn_model, less_comments):
+def get_J_t_D_jss_problem_rmse(test_set, env, dqn_model, less_comments):
     # Evaluates the performance of a DQN model in a resource management scenario
     time_list = []
     optimal_time_list = []

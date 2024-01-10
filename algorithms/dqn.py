@@ -88,8 +88,9 @@ def create_dqn_model(dimensions, numb_of_actions):
 
 
 def q_learning(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_epsilon, batch_size, update_target_network,
-               get_pretrained_dqn=False, progress_bar=True):
+               get_pretrained_dqn=False, progress_bar=True, get_histories=False):
     fitness_curve = list()
+    histories = list()
 
     # Create a progress bar for training
     if progress_bar:
@@ -111,6 +112,7 @@ def q_learning(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_epsilon,
     for episode in range(episodes):
         state = env.get_start_state(episode)
         return_ = 0
+        history = list()
 
         # If not final state
         while not env.done(state):
@@ -177,6 +179,11 @@ def q_learning(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_epsilon,
                     grads = tape.gradient(loss, dqn_model.trainable_variables)
                     optimizer.apply_gradients(zip(grads, dqn_model.trainable_variables))
 
+            history.append({
+                "state": state,
+                "action": action
+            })
+
             # Update state
             state = list(next_state)
 
@@ -185,6 +192,7 @@ def q_learning(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_epsilon,
             target_dqn_model.set_weights(dqn_model.get_weights())
 
         fitness_curve.append(return_)
+        histories.append(history)
 
         # Epsilon decay
         epsilon = max(min_epsilon, epsilon * epsilon_decay)
@@ -198,7 +206,11 @@ def q_learning(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_epsilon,
         progress_bar.close()
 
     # Return models and fitness curve
-    if get_pretrained_dqn:
+    if get_pretrained_dqn and get_histories:
+        return dqn_model, fitness_curve, pretrained_dqn_model, histories
+    elif get_pretrained_dqn:
         return dqn_model, fitness_curve, pretrained_dqn_model
+    elif get_histories:
+        return dqn_model, fitness_curve, histories
     else:
         return dqn_model, fitness_curve

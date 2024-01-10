@@ -1,3 +1,6 @@
+import os
+import time
+import json
 import tqdm
 import tensorflow as tf
 import numpy as np
@@ -26,9 +29,8 @@ os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # Allow dynamic GPU memory all
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def main():
-    # data_gen.generate_new_dataset(100, 25)
-
+def setup_gpu():
+    """ Sets up GPU for TensorFlow and prints its availability. """
     # Check and print GPU availability
     gpus = tf.config.list_physical_devices('GPU')
     if gpus:
@@ -36,7 +38,55 @@ def main():
             print("Using a GPU:", gpu.name)
     else:
         print("No GPUs found")
-        print("GPUs found:", gpus)
+
+
+def convert_to_serializable(data):
+    """ Convert non-serializable data (like NumPy arrays) to a serializable format. """
+    if isinstance(data, np.integer):
+        return int(data)  # Convert np.int64 to int
+    elif isinstance(data, np.floating):
+        return float(data)  # Convert np.float64 to float
+    if isinstance(data, np.ndarray):
+        return data.tolist()  # Convert ndarray to list
+    elif isinstance(data, dict):
+        return {k: convert_to_serializable(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [convert_to_serializable(v) for v in data]
+    return data
+
+
+def log_execution_details(start_time, hyperparameters, result, model_path):
+    """ Logs execution details to a file. """
+    log_file = 'execution_log.json'
+    execution_time = time.time() - start_time
+    new_log_entry = convert_to_serializable({
+        'Execution Time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time)),
+        'Duration (seconds)': execution_time,
+        'System Configuration': str(tf.config.list_physical_devices('GPU')),
+        'Hyperparameters': hyperparameters,
+        'Result': result,
+        'Model Path': model_path
+    })
+
+    # Check if the log file already exists and read it
+    if os.path.isfile(log_file):
+        with open(log_file, 'r') as file:
+            existing_logs = json.load(file)
+    else:
+        existing_logs = []
+
+    # Append the new log entry
+    existing_logs.append(new_log_entry)
+
+    # Write the updated logs back to the file
+    with open(log_file, 'w') as file:
+        json.dump(existing_logs, file, indent=4)
+
+
+def main():
+    start_time = time.time()
+    setup_gpu()
+    # data_gen.generate_new_dataset(100, 25)
 
     # ------------------------------------------------------------------------------------------------------------------
     # Change Hyperparameters here:
@@ -142,10 +192,11 @@ def main():
     # |Miscellaneous settings|
     numb_of_executions = 1  # The number of DQNs trained. If number is > 1 an average fitness curve will be displayed
     save_final_dqn_model = False  # Toggle to save DQN model. Only works if numb_of_executions is 1
-    model_name = "TEST"  # The name the model is saved under
+    model_name = "auto"  # The name the model is saved under
     test_set_abs_size = 20  # Only works if numb_of_executions is 1
     less_comments = True  # Reduce the print statements produced by the algorithm
     print_hyperparameters = True  # Toggle for printing hyperparameters
+    save_in_log = True
 
     # |Example configuration (possible only if numb_of_executions == 1)|
     # This is the example that will be displayed as an example of what the system can do
@@ -169,8 +220,8 @@ def main():
         progress_bar = tqdm(total=numb_of_executions, unit='iterations')
         test_set = None
 
-    fitness_curve_list = []
-    results = []
+    result = []
+    model_path = "No Model was saved"
 
     # Multiple execution loop
     if numb_of_executions > 1:
@@ -197,26 +248,46 @@ def main():
                 training_accuracy = history.history['accuracy']
                 validation_accuracy = history.history.get('val_accuracy',
                                                           [])  # Empty list if validation accuracy is not available
-                result = training_accuracy
+
+                result_item = {
+                    "training_loss": training_loss,
+                    "validation_loss": validation_loss,
+                    "training_accuracy": training_accuracy,
+                    "validation_accuracy": validation_accuracy,
+                }
 
             else:
                 # Running the Q-learning algorithm
-                _, result, _ = dqn.q_learning(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_epsilon,
-                                              batch_size, update_target_network, get_pretrained_dqn=True,
-                                              progress_bar=False)
+                _, fitness_curve, _, histories = dqn.q_learning(env, episodes, gamma, epsilon, alpha, epsilon_decay,
+                                                                min_epsilon, batch_size, update_target_network,
+                                                                get_pretrained_dqn=True,
+                                                                progress_bar=False, get_histories=True)
 
-            results.append(result)
+                result_item = {"histories": histories,
+                          "fitness_curve": fitness_curve}
+
+            result.append(result_item)
 
             if progress_bar:
                 # Update the progress bar
                 progress_bar.update(1)
 
-        # Fitness curve calculation and visualization
-        for item in results:
-            fitness_curve_list.append(item)
+        # Result calculation and visualization
+        if algorithm == 'supervised':
+            training_accuracy_list = list()
+            for item in result:
+                training_accuracy_list.append(item["training_accuracy"])
 
-        vis.show_fitness_curve(util.calculate_average_sublist(fitness_curve_list), title="Average Fitness Curve",
-                               subtitle=f"DQN average performance of {len(fitness_curve_list)} executions")
+            vis.show_line_graph(util.calculate_average_sublist(training_accuracy_list),
+                                title="Average Training Accuracy",
+                                subtitle=f"NN average performance of {len(training_accuracy_list)} executions")
+        else:
+            fitness_curve_list = list()
+            for item in result:
+                fitness_curve_list.append(item["fitness_curve"])
+
+            vis.show_line_graph(util.calculate_average_sublist(fitness_curve_list), title="Average Fitness Curve",
+                                subtitle=f"DQN average performance of {len(fitness_curve_list)} executions")
 
     else:  # Single execution logic
 
@@ -242,32 +313,52 @@ def main():
             training_accuracy = history.history['accuracy']
             validation_accuracy = history.history.get('val_accuracy',
                                                       [])  # Empty list if validation accuracy is not available
-            fitness_curve = training_accuracy
+            result = {
+                "training_loss": training_loss,
+                "validation_loss": validation_loss,
+                "training_accuracy": training_accuracy,
+                "validation_accuracy": validation_accuracy
+            }
+
+            vis.show_line_graph(training_accuracy, title="Training Accuracy", subtitle=f"DQN")
+            print("\n")
 
         else:
             # Running the Q-learning algorithm
-            dqn_model, fitness_curve, pretraining_dqn_model = dqn.q_learning(env, episodes, gamma, epsilon, alpha,
-                                                                             epsilon_decay, min_epsilon,
-                                                                             batch_size, update_target_network,
-                                                                             get_pretrained_dqn=True,
-                                                                             progress_bar=False)
+            dqn_model, fitness_curve, pretraining_dqn_model, histories = dqn.q_learning(env, episodes, gamma, epsilon,
+                                                                                        alpha, epsilon_decay,
+                                                                                        min_epsilon, batch_size,
+                                                                                        update_target_network,
+                                                                                        get_pretrained_dqn=True,
+                                                                                        progress_bar=True,
+                                                                                        get_histories=True)
 
-        # Fitness curve calculation and visualization
-        vis.show_fitness_curve(fitness_curve, title="Fitness Curve", subtitle=f"DQN")
-        print("\n")
+            result = {"histories": histories,
+                      "fitness_curve": fitness_curve}
+
+            # Fitness curve calculation and visualization
+            vis.show_line_graph(fitness_curve, title="Fitness Curve", subtitle=f"DQN")
+            print("\n")
 
         # Environment-specific accuracy computation and visualization
         if environment == "[J,m=1|nowait,f,gj=1|min(T)]":
-            print(f"The accuracy of the algorithm is: {validation.time_dqn(test_set, env, dqn_model, less_comments)}%")
-            print("This shows the average correctly assorted tasks")
+            print("The validation for [J,m=1|nowait,f,gj=1|min(T)] has a bug which is beeing looked at")
+            # accuracy = validation.get_Jm_f_T_jss_problem_accurcy(test_set, env, dqn_model, less_comments)
+            # print(f"The accuracy of the algorithm is: {accuracy}%")
+            # print("This shows the average correctly assorted tasks")
+            # result["accuracy"] = accuracy
         elif environment == "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|avg(T)]":
             print("No validation for this environment exists yet")
         else:
+            rmse = validation.get_J_t_D_jss_problem_rmse(test_set, env, dqn_model, less_comments)
+            pretrained_rmse = validation.get_J_t_D_jss_problem_rmse(test_set, env, pretraining_dqn_model, less_comments)
             print(f"The accuracy of the algorithm is: "
-                  f"{validation.resource_dqn(test_set, env, dqn_model, less_comments)}/"
-                  f"{validation.resource_dqn(test_set, env, pretraining_dqn_model, less_comments)}")
+                  f"{rmse}/"
+                  f"{pretrained_rmse}")
             print("The accuracy is calculated using the Root Mean Squared Error (RMSE). Lower is better.")
             print("The second number is the RMSE of the untrained NN")
+            result["rmse"] = rmse
+            result["pretrained_rmse"] = pretrained_rmse
         print("")
 
         if environment != "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|avg(T)]":
@@ -283,8 +374,10 @@ def main():
             print("\n")
 
         # Model saving logic
-        if save_final_dqn_model:
-            dqn_model.save(f'models/{model_name}')
+        if model_name == "auto":
+            model_name = f"{environment}_{algorithm}_{time.strftime('%Y%m%d_%H%M%S')}"
+        model_path = f'models/{model_name}'
+        dqn_model.save(model_path)
 
     # Print hyperparameters if enabled
     if print_hyperparameters:
@@ -313,6 +406,34 @@ def main():
         print("numb_of_executions:", numb_of_executions)
         print("save_final_dqn_model:", save_final_dqn_model)
         print("test_set_abs_size:", test_set_abs_size)
+
+    if save_in_log:
+        hyperparameters = {
+            'environment': environment,
+            'max_numb_of_machines': max_numb_of_machines,
+            'max_numb_of_tasks': max_numb_of_tasks,
+            'max_task_depth': max_task_depth,
+            'fixed_max_numbers': fixed_max_numbers,
+            'high_numb_of_tasks_preference': high_numb_of_tasks_preference,
+            'high_numb_of_machines_preference': high_numb_of_machines_preference,
+            'algorithm': algorithm,
+            'episodes': episodes,
+            'gamma': gamma,
+            'epsilon': epsilon,
+            'alpha': alpha,
+            'epsilon_decay': epsilon_decay,
+            'min_epsilon': min_epsilon,
+            'batch_size': batch_size,
+            'update_target_network': update_target_network,
+            'numb_of_executions': numb_of_executions,
+            'model_name': model_name,
+            'test_set_abs_size': test_set_abs_size,
+            'less_comments': less_comments,
+            'print_hyperparameters': print_hyperparameters,
+        }
+        log_execution_details(start_time, hyperparameters, result, model_path)
+
+        print("\nLog file successfully updated")
 
 
 if __name__ == '__main__':

@@ -70,7 +70,7 @@ def visualise_results(optimal_policy, env):
         i += 1
 
 
-def show_fitness_curve(data, title="Fitness Curve", subtitle="", x_label="episodes", y_label="return"):
+def show_line_graph(data, title="Fitness Curve", subtitle="", x_label="episodes", y_label="return"):
     # Plot and show a fitness curve using matplotlib
     plt.suptitle(title, fontsize=18)  # title
     plt.title(subtitle, fontsize=10)  # subtitle
