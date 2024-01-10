@@ -1,6 +1,23 @@
 # Reinforcement Learning Resource Management
+- [Abstract](#Abstract)
+- [Getting started](#getting-started)
+- [Software Structure](#Software-structure)
+- [Environments](#Environments)
 ## Abstract
 This software, "Reinforcement Learning Resource Management", is an implementation focused on integrating Q-Learning, a Reinforcement Learning (RL) method, into Job Shop Scheduling (JSS). RL is a subfield of artificial intelligence, characterized by learning from interaction with an environment, using rewards or penalties. This project particularly employs Q-Learning, a model-free algorithm, allowing the agent to learn optimal policies without prior knowledge of the environment's dynamics. The core application of this technique is in JSS, illustrating its utility in scheduling tasks based on due dates and other critical parameters. The project also delves into Deep Q-Learning, extending the application's scope and efficacy in complex scheduling environments.
+
+## Getting started
+In this section you can find all information needed to run the software on your own machine.
+
+<details>
+
+### Basic requirements
+- If you use a windows machine you will have to install **WSL**
+- We use the `python version 3.10`
+- You can install all required packages either as a conda environment using the `conda_backup.yaml` file or you can use the
+`requirements.txt` file to create a python virtual environment.
+
+</details>
 
 ## Software Structure
 The software comprises several key components, outlined as follows:
@@ -23,6 +40,8 @@ To run this Program opptimaly a GPU should be used with linux or wsl. The other 
 
 ### Main File
 
+<details>
+
 Listed here are the functions that are executed in the main file, which mainly consists of the main function which executes all the other scripts.
 The script is designed to be run as a standalone program.
 
@@ -40,10 +59,14 @@ If multiple executions are specified, it starts iterating and thus trains a new 
 For an execution an environment ([J,m=1|nowait,f|min(T)] or [J|nowait,t|min(D)]) is set up. Then the dQN model is trained, for which a fitness curve is then later displayed.
 Eventually an Example is executed and visualised with the newly trained DQN model (only if one execution is set).
 
+</details>
+
 ### Deep Q-Network (DQN) Implementation
 
 Deep Q-Networks merge the traditional Q-Learning approach with deep neural networks to efficiently handle complex, high-dimensional state-action spaces without the need for discretization. This makes DQN an ideal choice for our scheduling tasks, where the parameters can vary widely, creating a vast and continuous space of possibilities.
 The DQN is located inside the `algorithms` package. The main algorithm is located in the `dqn.py` file, while the replay buffer class is located in the `replay_buffer.py` file.
+
+<details>
 
 #### Key Components
 
@@ -69,8 +92,9 @@ To ensure stability in the learning process, a target network, mirroring the DQN
 
 The implementation is highly customizable, allowing for modifications in network architecture, hyperparameters, and training procedures. This flexibility ensures that the software can adapt to a wide range of scheduling scenarios.
 
+</details>
 
-### Environments
+## Environments
 
 The environments are located in the `environments` package. Both existing environments are child classes of the `GenericEnvironment` (located in the `generic_environment.py` file). The two child environments are will be explained in further detail in the following paragraphs.
 
@@ -78,12 +102,13 @@ The environments are located in the `environments` package. Both existing enviro
 
 The environments are named after German job shop scheduling classification standards. Standards are defined in the [German job shop scheduling classification standards](https://de.wikipedia.org/wiki/Klassifikation_von_Maschinenbelegungsmodellen#Literatur).
 
-##### Classifications
-
-Under this standard, the job shop problem is first divided into 3 classifications:
 
 <details>
-  ###### α - Machine characteristics
+  <summary>More information on the classifications</summary>
+
+  Under this standard, the job shop problem is first divided into 3 classifications:
+
+  <b>α - Machine characteristics</b>
 
   - **α1**: Machine type and arrangement
     - **°**: A single available machine
@@ -96,7 +121,7 @@ Under this standard, the job shop problem is first divided into 3 classification
     - **°**: Any number
     - **m**: Exactly m machines
 
-  ###### β - Task characteristics
+  <b>β - Task characteristics</b>
 
   - **β1**: Number of tasks
     - **n=const**: A certain number of tasks is predefined. Often n=2.
@@ -136,18 +161,21 @@ Under this standard, the job shop problem is first divided into 3 classification
     - **κ**: Indicates the available intermediate storage for the i-th machine
     - **°**: Each machine has a storage with infinite capacity
 
-  ###### γ - Objective
+  <b>γ - Objective</b>
 
   - **D**: Minimization of throughput time
   - **Z**: Minimization of cycle time / total processing time
   - **T**: Minimization of deadline deviation
   - **V**: Minimization of tardiness
   - **L**: Minimization of idle time
+
 </details>
 
-#### [J,m=1|nowait,f|min(T)] Environment
+#### [J,m=1|nowait,f,gj=1|min(T)] Environment
 
 The `Jm_f_T_JSSProblem` class is adept at handling situations where tasks must be completed sequentially, making it uniquely suited for problems where task dependencies and order play a significant role.
+
+<details>
 
 ##### State Representation
 
@@ -168,12 +196,14 @@ The reward function in the `Jm_f_T_JSSProblem` environment is designed to encour
 ##### Application and Significance
 
 The DQN Agent has been shown to converge (learn) when the `Jm_f_T_JSSProblem` environment was used. But since the agent, used in this environment, could be replaced with a simple sorting algorithm, its significance is limited, and it only proves that the dqn algorithm is functional.
+</details>
 
 
-
-#### [J|nowait,t|min(D)] Environment
+#### [J|nowait,t,gj=1|min(D)] Environment
 
 The `J_t_D_JSSProblem` class in our software extends the concept of task scheduling in a complex and dynamic environment. This class is specifically designed to simulate a scenario where tasks, associated with specific durations, need to be allocated to multiple machines with the goal of minimizing overall execution time. This setup presents a practical instance of the classic job-shop scheduling problem, a key challenge in Operations Research.
+
+<details>
 
 ##### State Representation
 
@@ -203,3 +233,5 @@ The reward function is designed to incentivize efficient scheduling. It provides
 ##### Results and Implications
 
 The results of this environment have sofar been lack luster. This environment should be seen as a work in progress
+
+</details>
