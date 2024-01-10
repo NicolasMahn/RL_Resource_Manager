@@ -55,3 +55,5 @@ urllib3==2.0.7
 werkzeug==3.0.1
 wrapt==1.15.0
 zipp==3.17.0
+tensorrt
+pandas

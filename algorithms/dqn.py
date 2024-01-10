@@ -38,11 +38,12 @@ def get_pi_from_q(env, dqn_model, initial_state, less_comments=False):
 
     while not env.done(state):
         # Get Q-values for all actions from DQN model
-        q_values = dqn_model.predict(np.array([env.state_for_dqn(state)]))
+        q_values = dqn_model.predict(np.array([env.to_tensor_state(state)]))
 
         # Determine possible and impossible actions
         possible_actions, impossible_actions = env.get_possible_actions(state)
         if len(possible_actions) == 0:
+            print("PROBLEM: No action possible")
             break
         possible_action_indices = [env.action_to_int(action) for action in possible_actions]
         impossible_action_indices = [env.action_to_int(action) for action in impossible_actions]
@@ -117,13 +118,14 @@ def q_learning(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_epsilon,
 
             # Get Q-values for all actions from DQN
             actual_q_values = dqn_model(
-                np.array([env.state_for_dqn(state)]))
+                np.array([env.to_tensor_state(state)]))
             q_values = actual_q_values.numpy()[0]
 
             # Action selection and masking
             possible_actions, impossible_actions = \
                 env.get_possible_actions(state)
             if len(possible_actions) == 0:
+                print("PROBLEM: No action possible")
                 break
             possible_action_indices = \
                 [env.action_to_int(action) for action in possible_actions]
@@ -147,7 +149,7 @@ def q_learning(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_epsilon,
             return_ += reward
 
             # Store experience to the replay buffer
-            replay_buffer.push(env.state_for_dqn(state), action_index, reward, env.state_for_dqn(next_state))
+            replay_buffer.push(env.to_tensor_state(state), action_index, reward, env.to_tensor_state(next_state))
 
             # Start training when there are enough experiences in the buffer
             if len(replay_buffer) > batch_size:

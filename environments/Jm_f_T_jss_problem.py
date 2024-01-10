@@ -37,6 +37,7 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
         # Generate possible actions
         actions = [[task, i] for task in range(self.max_numb_of_tasks) for i in range(len(self.result))]
 
+
         # Call to superclass constructor
         super().__init__(dimensions=dimensions, actions=actions, start_state=np.zeros(max_numb_of_tasks))
 
@@ -73,6 +74,18 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
             return True
         else:
             return False
+
+    def check_if_step_correct(self, state, action, next_state):
+
+        merged_list = next_state[0] + next_state[1]
+        sorted_state = sorted([item for item in merged_list if item != 0])
+        result = next_state[1]
+        i = 0
+        correct = True
+        for s in sorted_state:
+            correct = (s == result[i]) and correct
+            i += 1
+        return correct
 
     def get_reward(self, state, action, next_state):
         # Function to calculate reward based on current state, action, and next state
@@ -137,7 +150,7 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
 
         return possible_actions, impossible_actions
 
-    def state_for_dqn(self, state):
+    def to_tensor_state(self, state):
         # Function to prepare the state for Deep Q-Network (DQN) processing
         state_padded = list()
         for s in state:

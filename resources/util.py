@@ -4,6 +4,7 @@ import math
 # Random number generators
 random = np.random.random
 randint = np.random.randint
+random_choice = np.random.choice
 
 
 def argmax(elements):
@@ -67,7 +68,7 @@ def average_difference(int_array):
     # Computes the average difference between consecutive elements in an array
     if len(int_array) < 2:
         return 0
-    diffs = [int_array[i+1] - int_array[i] for i in range(len(int_array) - 1)]
+    diffs = [int_array[i + 1] - int_array[i] for i in range(len(int_array) - 1)]
     return sum(diffs) / len(diffs)
 
 
@@ -155,30 +156,31 @@ def generate_tasks(max_task_depth, numb_of_tasks, test_set_tasks=None):
     return task_array.tolist()  # Convert numpy array to list
 
 
-def validate_child_elements(sequence):
+def validate_child_elements(numb_of_tasks: int):
+    sequence = random_choice(np.arange(-1, numb_of_tasks), size=numb_of_tasks,
+                             p=[1 / 3] + [2 / (3 * numb_of_tasks)] * numb_of_tasks)
 
-    # Ensure initial condition: element not equal to its index
-    np.random.shuffle(sequence)
-    for i in range(len(sequence)):
-        while sequence[i] == i:
-            np.random.shuffle(sequence)
-
-    # Additional check for ring condition
-    def forms_ring(seq):
-        for start in range(len(seq)):
-            visited = set()
-            current = start
-            while True:
-                if current in visited:
-                    return current == start
-                visited.add(current)
-                current = seq[current]
-
-    # Shuffle until the ring condition is met
-    while forms_ring(sequence):
-        np.random.shuffle(sequence)
-        for i in range(len(sequence)):
-            while sequence[i] == i:
-                np.random.shuffle(sequence)
+    p = 0
+    for s in sequence:
+        if s == -1:
+            p += 1
+            continue
+        elif s == p:
+            sequence[p] = (-1)
+        elif circle_check(sequence, s, s, max_numb_recursion=numb_of_tasks*3):
+            sequence[p] = (-1)
+        p += 1
 
     return sequence
+
+
+def circle_check(sequence, position, find, max_numb_recursion=100):
+    if max_numb_recursion == 0:
+        return False
+
+    if find == sequence[position]:
+        return True
+    elif sequence[position] == -1:
+        return False
+    else:
+        return circle_check(sequence, sequence[position], find, (max_numb_recursion-1))
