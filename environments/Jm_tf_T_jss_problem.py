@@ -44,6 +44,7 @@ class Jm_tf_T_JSSProblem(GenericEnvironment):
         self.numb_of_tasks = self.max_numb_of_tasks
 
         # Initialize the state elements
+        # These are the indexes of the state, enabling better code readability
         self.ids = 0
         self.child_foreign_keys = 1
         self.nonpreemtive_flag = 2
@@ -71,10 +72,10 @@ class Jm_tf_T_JSSProblem(GenericEnvironment):
 
     def get_specific_state_list(self, list_):
         # Function to get a specific state based on provided attributes
-        return list([list_[self.ids], list_[self.child_foreign_keys], list_[self.nonpreemtive_flag],
-                     list_[self.lead_time_total], list_[self.lead_time_todo], list_[self.processing_time_total],
-                     list_[self.processing_time_todo], list_[self.deadline],
-                     list_[self.done_flag], list_[self.is_task_ready]])
+        return self.get_specific_state(list_[self.ids], list_[self.child_foreign_keys], list_[self.nonpreemtive_flag],
+                                       list_[self.lead_time_total], list_[self.lead_time_todo],
+                                       list_[self.processing_time_total], list_[self.processing_time_todo],
+                                       list_[self.deadline], list_[self.done_flag], list_[self.is_task_ready])
 
     def get_start_state(self):
         # Function to initialize the starting state of the environment
@@ -136,18 +137,17 @@ class Jm_tf_T_JSSProblem(GenericEnvironment):
         else:
             return 1
 
-
     def get_reward(self, state, action, next_state):
         # Function to calculate the reward based on the state, action, and next state
         reward = 0.1  # small reward for each step
         j = 0
 
-        #for i in range(0, self.numb_of_tasks):
-           # if next_state[self.deadline][i] <= 0 and next_state[self.done_flag][i] != 1:
-          #      reward -= 2 * (next_state[self.deadline][i] * -1 + 1)
-            #if state[self.deadline][i] <= 0 and state[self.done_flag][i] != 1:
-            #    reward += 10 * (next_state[self.deadline][i] * -1 + 1)
-         #   j += next_state[self.deadline][i]
+        # for i in range(0, self.numb_of_tasks):
+        # if next_state[self.deadline][i] <= 0 and next_state[self.done_flag][i] != 1:
+        #      reward -= 2 * (next_state[self.deadline][i] * -1 + 1)
+        # if state[self.deadline][i] <= 0 and state[self.done_flag][i] != 1:
+        #    reward += 10 * (next_state[self.deadline][i] * -1 + 1)
+        #   j += next_state[self.deadline][i]
 
         # reward += np.average(j)
         # return reward
@@ -163,7 +163,6 @@ class Jm_tf_T_JSSProblem(GenericEnvironment):
             return -1
         else:
             return 1
-
 
     def get_next_state(self, state, action):
         # Function to determine the next state based on the current state and action
@@ -246,4 +245,3 @@ class Jm_tf_T_JSSProblem(GenericEnvironment):
     def get_result(self):
         # Function to retrieve the history
         return self.history
-

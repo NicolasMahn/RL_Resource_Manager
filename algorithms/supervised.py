@@ -78,9 +78,9 @@ def preprocess_data(env, df):
 
 def create_nn_model(input_shape, num_actions):
     model = keras.Sequential([
-        keras.layers.Dense(64, activation='relu', input_shape=input_shape),
+        keras.layers.Dense(64, activation='relu', input_shape=(2, 9)),
         keras.layers.Dense(128, activation='relu'),
-        keras.layers.Dense(num_actions, activation='softmax')
+        keras.layers.Dense((2, 81), activation='softmax')
     ])
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
     return model
@@ -90,6 +90,8 @@ def supervised_learning(env, epochs, batch_size, get_pretrained_dnn=False):
     # Generate and preprocess the dataset
     dataset_df = create_dataset(env, epochs)
     X, y = preprocess_data(env, dataset_df)
+
+    print(y)
 
     # Create and train the neural network model
     model = create_nn_model(X.shape[1:], len(env.actions))

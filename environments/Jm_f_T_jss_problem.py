@@ -51,11 +51,7 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
 
     def get_specific_state_list(self, list_):
         # Function to get a specific state based on provided tasks
-        self.tasks = list_[0]
-        self.numb_of_tasks = len(self.tasks)
-        self.result = np.zeros(self.numb_of_tasks, dtype=int)
-
-        return list([self.tasks, self.result])
+        return self.get_specific_state(list_[0])
 
     def get_start_state(self):
         # Function to initialize the starting state of the environment

@@ -64,16 +64,7 @@ class J_t_D_JSSProblem(GenericEnvironment):
 
     def get_specific_state_list(self, list_):
         # Function to get a specific state based on tasks and number of machines
-        self.numb_of_tasks = len(list_[0])
-        self.numb_of_machines = list_[1]
-        self.tasks = list_[0]
-        self.current_max_time = sum([task for task in self.tasks])
-        self.current_cumulative_machines = np.zeros(self.numb_of_machines)
-
-        start_state = [np.pad(self.tasks, (0, self.current_max_time - len(self.tasks)), constant_values=0)]
-        start_state.extend([[0] * self.current_max_time for _ in range(self.numb_of_machines)])
-        start_state.append(np.zeros(self.current_max_time, dtype=int))
-        return list(start_state)
+        return self.get_specific_state(tasks=list_[0], numb_of_machines=list_[1])
 
     def get_start_state(self):
         # Function to get the starting state of the environment
