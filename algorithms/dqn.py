@@ -70,7 +70,6 @@ def get_pi_from_q(env, dqn_model, initial_state, less_comments=False):
 
 
 def create_dqn_model(dimensions, numb_of_actions):
-
     # Define input and dense layers of the DQN model
     state_input = keras.layers.Input(shape=tuple(dimensions))
     layer1 = keras.layers.Dense(64, activation="relu")(state_input)
@@ -110,7 +109,7 @@ def q_learning(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_epsilon,
 
     # Main training loop
     for episode in range(episodes):
-        state = env.get_start_state()
+        state = env.get_start_state(episode)
         return_ = 0
 
         # If not final state
@@ -166,8 +165,8 @@ def q_learning(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_epsilon,
                         dqn_model(np.array([replay_state[i]])).numpy()[0]
                     replay_updated_q_values[replay_action[i]] = \
                         replay_updated_q_values[replay_action[i]] + alpha * (
-                            (replay_reward[i] + gamma * np.max(replay_next_q_values)) -
-                            replay_updated_q_values[replay_action[i]])
+                                (replay_reward[i] + gamma * np.max(replay_next_q_values)) -
+                                replay_updated_q_values[replay_action[i]])
                     action_mask = tf.one_hot(replay_action[i], len(env.actions))
 
                     with tf.GradientTape() as tape:

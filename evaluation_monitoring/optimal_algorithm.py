@@ -120,7 +120,7 @@ def generate_test_data(max_numb_of_machines, max_numb_of_tasks, max_task_depth,
     # print(output_data)
     output_file = f'test_sets/optimal_job_shobs_mt{max_numb_of_tasks}_mm{max_numb_of_machines}_mtd{max_task_depth}' \
                   f'_len{len(filtered_results)}.json'
-    with open(output_file, 'w') as f:
-        json.dump(output_data, f, indent=4)
+    # with open(output_file, 'w') as f:
+    #    json.dump(output_data, f, indent=4)
 
     return output_file, filtered_results

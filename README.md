@@ -7,12 +7,12 @@
 This software, "Reinforcement Learning Resource Management", is an implementation focused on integrating Q-Learning, a Reinforcement Learning (RL) method, into Job Shop Scheduling (JSS). RL is a subfield of artificial intelligence, characterized by learning from interaction with an environment, using rewards or penalties. This project particularly employs Q-Learning, a model-free algorithm, allowing the agent to learn optimal policies without prior knowledge of the environment's dynamics. The core application of this technique is in JSS, illustrating its utility in scheduling tasks based on due dates and other critical parameters. The project also delves into Deep Q-Learning, extending the application's scope and efficacy in complex scheduling environments.
 
 ## Getting started
-In this section you can find all information needed to run the software on your own machine.
+In this section you can find all information you need to run the software on your own machine.
 
 <details>
 
 ### Basic requirements
-- If you use a windows machine you will have to install **WSL**
+- If you use a windows machine you will need **WSL**
 - We use the `python version 3.10`
 - You can install all required packages either as a conda environment using the `conda_backup.yaml` file or you can use the
 `requirements.txt` file to create a python virtual environment.

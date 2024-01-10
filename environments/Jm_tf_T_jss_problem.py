@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 
 from .generic_environment import GenericEnvironment
-from resources import util
+from resources import util, data_generation
 
 # Random number generators
 random_choice = np.random.choice
@@ -14,7 +14,10 @@ weighted_randint = util.weighted_randint
 class Jm_tf_T_JSSProblem(GenericEnvironment):
 
     def __init__(self, max_numb_of_tasks, test_set, fixed_max_numbers,
-                 high_numb_of_tasks_preference):
+                 high_numb_of_tasks_preference, dir_name):
+        self.env_name = "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|avg(T)]"
+        self.dir_name = dir_name
+
         # A state needs the following information for all n*tasks in it:
         # # id
         # # child_foreign_key
@@ -77,45 +80,9 @@ class Jm_tf_T_JSSProblem(GenericEnvironment):
                                        list_[self.processing_time_total], list_[self.processing_time_todo],
                                        list_[self.deadline], list_[self.done_flag], list_[self.is_task_ready])
 
-    def get_start_state(self):
-        # Function to initialize the starting state of the environment
-        ids = np.arange(0, self.numb_of_tasks)
-        child_foreign_keys = util.validate_child_elements(self.numb_of_tasks)
-        nonpreemtive_flag = random_choice(np.arange(0, 2), size=self.numb_of_tasks)
-        lead_time_total = random_choice(np.arange(0, 5), size=self.numb_of_tasks, p=[1 / 2] + [1 / 8] * 4)
-        lead_time_todo = lead_time_total
-        processing_time_total = random_choice(np.arange(1, 10), size=self.numb_of_tasks)
-        processing_time_todo = processing_time_total
-        deadline = self._generate_deadlines_with_target_average(self.numb_of_tasks, 40, (10, 50))
-        done_flag = np.zeros(self.numb_of_tasks, dtype=int)
-        is_task_ready = np.ones(self.numb_of_tasks, dtype=int)
-        for i in child_foreign_keys:
-            if i != -1:
-                is_task_ready[i] = 0
-
-        return list([ids, child_foreign_keys, nonpreemtive_flag, lead_time_total, lead_time_todo, processing_time_total,
-                     processing_time_todo, deadline, done_flag, is_task_ready])
-
-    @staticmethod
-    def _generate_deadlines_with_target_average(numb_of_tasks, target_avg, value_range):
-        # Calculate target total
-        target_total = target_avg * numb_of_tasks
-
-        # Generate initial random values
-        deadlines = np.random.randint(value_range[0], value_range[1], size=numb_of_tasks)
-
-        # Adjust the values to meet the target total
-        while np.sum(deadlines) != target_total:
-            # Calculate the difference between current total and target total
-            diff = target_total - np.sum(deadlines)
-
-            # Randomly select an index to adjust
-            index = np.random.randint(0, numb_of_tasks)
-
-            # Adjust the selected value, ensuring it stays within the range
-            deadlines[index] = np.clip(deadlines[index] + diff, value_range[0], value_range[1])
-
-        return deadlines.tolist()
+    def get_start_state(self, num_episode: int):
+        temp_list = data_generation.get_start_state(self.env_name, self.numb_of_tasks, num_episode, self.dir_name)
+        return temp_list
 
     def done(self, state):
         # Function to check if the current state is a terminal state
@@ -234,7 +201,7 @@ class Jm_tf_T_JSSProblem(GenericEnvironment):
 
         return possible_actions, impossible_actions
 
-    def state_for_dqn(self, state):
+    def to_tensor_state(self, state):
         # Function to prepare the state for Deep Q-Network (DQN) processing
         state_padded = list()
         for s in state:

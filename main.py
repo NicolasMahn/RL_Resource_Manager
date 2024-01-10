@@ -15,6 +15,8 @@ from environments.Jm_tf_T_jss_problem import Jm_tf_T_JSSProblem
 import algorithms.dqn as dqn
 import algorithms.supervised as supervised
 
+import resources.data_generation as data_gen
+
 # ----------------------------------------------------------------------------------------------------------------------
 # Setting up GPU usage for TensorFlow:
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # Specify GPU index for use
@@ -25,6 +27,8 @@ os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'  # Allow dynamic GPU memory all
 
 
 def main():
+    # data_gen.generate_new_dataset(100, 25)
+
     # Check and print GPU availability
     gpus = tf.config.list_physical_devices('GPU')
     if gpus:
@@ -105,12 +109,12 @@ def main():
     #                     time is known, has to be minimized.
     # [J,m=1|nowait,f,gj=1|min(T)]
     # [J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|avg(T)] # In Progress may be buggy
-    environment = "[J,m=1|nowait,f,gj=1|min(T)]"  # Choose between the "[J,m=1|nowait,f|min(T)]", or
+    environment = "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|avg(T)]"  # Choose between the "[J,m=1|nowait,f|min(T)]", or
     #                                                          "[J|nowait,t|min(D)] " environment
 
     # |Environment parameters|
     max_numb_of_machines = 2  # Maximum number of machines. Has to be 1 if not "Resource" environment
-    max_numb_of_tasks = 9  # Maximum number of tasks
+    max_numb_of_tasks = 9  # Maximum number of tasks -> check that dataset has enough entries, else create new one
     max_task_depth = 10  # duration of a task ~= random(1,max_task_depth)
     fixed_max_numbers = False
     # Toggle whether the number of tasks or machines should stay the same for each training scenario
@@ -123,7 +127,7 @@ def main():
 
     # |Choose Algorithm|
     # Choose between 'supervised' and 'dqn'
-    algorithm = 'supervised'
+    algorithm = 'dqn'
 
     # |DQN algorithm parameters|
     episodes = 500  # Total number of episodes for training the DQN agent
@@ -147,6 +151,9 @@ def main():
     # This is the example that will be displayed as an example of what the system can do
     tasks = [4, 1, 2, 3]
     numb_of_machines = 2  # Specific to "Resource" environment
+
+    # Specify data dir name
+    dir_name = "2024-01-10"
     # ------------------------------------------------------------------------------------------------------------------
 
     # Execution logic based on the number of runs specified
@@ -172,9 +179,10 @@ def main():
             # Environment setup based on selected type
             if environment == "[J,m=1|nowait,f,gj=1|min(T)]":
                 env = Jm_f_T_JSSProblem(max_numb_of_tasks, max_task_depth, test_set, fixed_max_numbers,
-                                        high_numb_of_tasks_preference)
+                                        high_numb_of_tasks_preference, dir_name)
             elif environment == "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|avg(T)]":
-                env = Jm_tf_T_JSSProblem(max_numb_of_tasks, test_set, fixed_max_numbers, high_numb_of_tasks_preference)
+                env = Jm_tf_T_JSSProblem(max_numb_of_tasks, test_set, fixed_max_numbers, high_numb_of_tasks_preference,
+                                         dir_name)
             else:
                 env = J_t_D_JSSProblem(max_numb_of_machines, max_numb_of_tasks, max_task_depth, fixed_max_numbers,
                                        high_numb_of_tasks_preference,
@@ -215,9 +223,10 @@ def main():
         # Environment setup based on selected type
         if environment == "[J,m=1|nowait,f,gj=1|min(T)]":
             env = Jm_f_T_JSSProblem(max_numb_of_tasks, max_task_depth, test_set, fixed_max_numbers,
-                                    high_numb_of_tasks_preference)
+                                    high_numb_of_tasks_preference, dir_name)
         elif environment == "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|avg(T)]":
-            env = Jm_tf_T_JSSProblem(max_numb_of_tasks, test_set, fixed_max_numbers, high_numb_of_tasks_preference)
+            env = Jm_tf_T_JSSProblem(max_numb_of_tasks, test_set, fixed_max_numbers, high_numb_of_tasks_preference,
+                                     dir_name)
         else:
             env = J_t_D_JSSProblem(max_numb_of_machines, max_numb_of_tasks, max_task_depth, fixed_max_numbers,
                                    high_numb_of_tasks_preference,

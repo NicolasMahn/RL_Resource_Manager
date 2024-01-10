@@ -14,6 +14,8 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
 
     def __init__(self, max_numb_of_tasks, max_task_depth, test_set, fixed_max_numbers,
                  high_numb_of_tasks_preference):
+        self.env_name = "[J,m=1|nowait,f,gj=1|min(T)]"
+
         # Initialize TimeManagement environment with specific parameters
         self.possible_actions = None  # Actions that can be taken in the current state
         self.impossible_actions = None  # Actions that cannot be taken
@@ -36,7 +38,6 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
 
         # Generate possible actions
         actions = [[task, i] for task in range(self.max_numb_of_tasks) for i in range(len(self.result))]
-
 
         # Call to superclass constructor
         super().__init__(dimensions=dimensions, actions=actions, start_state=np.zeros(max_numb_of_tasks))
@@ -105,7 +106,7 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
         else:
             reward += -1
 
-        return reward/2
+        return reward / 2
 
     def get_next_state(self, state, action):
         # Function to determine the next state based on the current state and action
