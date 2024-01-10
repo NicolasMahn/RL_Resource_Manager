@@ -17,13 +17,13 @@ ead_time_total = 3
 lead_time_todo = 4
 processing_time_total = 5
 processing_time_todo = 6
-deadline = 7
+deadline (due_date) = 7
 done_flag = 8
 is_task_ready = 9
 """
 env_dict = {
     "[J|nowait,t,gj=1|min(D)]": [0, 1, 2],
-    "[J,m=1|nowait,f,gj=1|min(T)]": [],
+    "[J,m=1|nowait,f,gj=1|min(T)]": [7],
     "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|avg(T)]": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 }
 
@@ -103,5 +103,6 @@ def get_start_state(env_name: str, number_of_tasks: int, num_episode: int, dir_n
     temp_result_list = []
     for item in env_dict.get(env_name):
         temp_result_list.append(result_list[item][:number_of_tasks])
-    final_result_list = dgu.remove_child_element_keys_that_are_too_high(temp_result_list)
-    return final_result_list
+    if 1 in env_dict.get(env_name):
+        temp_result_list = dgu.remove_child_element_keys_that_are_too_high(temp_result_list)
+    return temp_result_list

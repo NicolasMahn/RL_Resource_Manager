@@ -159,7 +159,7 @@ def main():
     #                     time is known, has to be minimized.
     # [J,m=1|nowait,f,gj=1|min(T)]
     # [J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|avg(T)] # In Progress may be buggy
-    environment = "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|avg(T)]"  # Choose between the "[J,m=1|nowait,f|min(T)]", or
+    environment = "[J,m=1|nowait,f,gj=1|min(T)]"  # Choose between the "[J,m=1|nowait,f|min(T)]", or
     #                                                          "[J|nowait,t|min(D)] " environment
 
     # |Environment parameters|

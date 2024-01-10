@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 
 from .generic_environment import GenericEnvironment
-from resources import util
+from resources import util, data_generation
 
 # Random number generators
 random = np.random.random
@@ -15,6 +15,7 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
     def __init__(self, max_numb_of_tasks, max_task_depth, test_set, fixed_max_numbers,
                  high_numb_of_tasks_preference, dir_name):
         self.env_name = "[J,m=1|nowait,f,gj=1|min(T)]"
+        self.dir_name = dir_name
 
         # Initialize TimeManagement environment with specific parameters
         self.possible_actions = None  # Actions that can be taken in the current state
@@ -54,15 +55,10 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
         # Function to get a specific state based on provided tasks
         return self.get_specific_state(list_[0])
 
-    def get_start_state(self):
+    def get_start_state(self, num_episode: int):
         # Function to initialize the starting state of the environment
-        self.numb_of_tasks, self.tasks = \
-            util.generate_specific_time_job_shop(
-                self.max_numb_of_tasks, self.max_task_depth,
-                self.high_numb_of_tasks_preference, self.fixed_max_numbers,
-                self.test_set_tasks)
+        self.tasks = data_generation.get_start_state(self.env_name, self.numb_of_tasks, num_episode, self.dir_name)
         self.result = np.zeros((self.numb_of_tasks,), dtype=int)
-
         return list([self.tasks, self.result])
 
     def done(self, state):
