@@ -23,6 +23,7 @@ import algorithms.dqn as dqn
 import algorithms.supervised as supervised
 
 import resources.data_generation as data_gen
+from resources.performance_monitor import PerformanceMonitor
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Setting up GPU usage for TensorFlow:
@@ -114,14 +115,19 @@ def get_system_configuration():
     }
 
 
-def log_execution_details(start_time, hyperparameters, result, model_path):
+def log_execution_details(start_time, hyperparameters, result, model_path, monitor):
     """ Logs execution details to a file. """
     log_file = 'execution_log.json'
+
+    monitor.stop()
+    monitor.join()
+    stats = monitor.get_statistics()
+
     execution_time = time.time() - start_time
     new_log_entry = convert_to_serializable({
         'Execution Time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time)),
         'Duration (seconds)': execution_time,
-        'System Configuration': get_system_configuration(),
+        'System Configuration': stats,
         'Hyperparameters': hyperparameters,
         'Result': result,
         'Model Path': model_path
@@ -143,8 +149,13 @@ def log_execution_details(start_time, hyperparameters, result, model_path):
 
 
 def main():
+    # Starting monitor tools for the log file
     start_time = time.time()
+    monitor = PerformanceMonitor(interval=1)
+    monitor.start()
+
     setup_gpu()
+
     # data_gen.generate_new_dataset(100, 25)
 
     # ------------------------------------------------------------------------------------------------------------------
@@ -234,10 +245,10 @@ def main():
 
     # |Choose Algorithm|
     # Choose between 'supervised' and 'dqn'
-    algorithm = 'supervised'
+    algorithm = 'dqn'
 
     # |DQN algorithm parameters|
-    episodes = 100  # Total number of episodes for training the DQN agent
+    episodes = 10  # Total number of episodes for training the DQN agent
     gamma = 0.85  # Discount factor for future rewards in the Q-learning algorithm
     epsilon = 0.4  # Initial exploration rate in the epsilon-greedy strategy
     alpha = 0.01  # Learning rate, determining how much new information overrides old information
@@ -489,7 +500,7 @@ def main():
             'less_comments': less_comments,
             'print_hyperparameters': print_hyperparameters,
         }
-        log_execution_details(start_time, hyperparameters, result, model_path)
+        log_execution_details(start_time, hyperparameters, result, model_path, monitor)
 
         print("\nLog file successfully updated")
 
