@@ -61,3 +61,6 @@ pandas~=2.1.4
 tqdm~=4.66.1
 tensorflow~=2.14.0
 matplotlib~=3.8.1
+psutil
+py-cpuinfo
+GPUtil
