@@ -60,61 +60,6 @@ def convert_to_serializable(data):
     return data
 
 
-def get_gpu_details():
-    try:
-        gpus = GPUtil.getGPUs()
-        if not gpus:
-            return "No supported (NVIDIA) GPUs found"
-
-        gpu_info = []
-        for gpu in gpus:
-            gpu_info.append({
-                'GPU ID': gpu.id,
-                'GPU Name': gpu.name,
-                'Total Memory (MB)': gpu.memoryTotal,
-                'Memory Used (MB)': gpu.memoryUsed,
-                'Memory Free (MB)': gpu.memoryFree,
-                'Driver': gpu.driver,
-                'Load (%)': gpu.load * 100,
-                'Temperature (°C)': gpu.temperature
-            })
-        if len(gpu_info) == 1:
-            return gpu_info[0]
-        else:
-            return gpu_info
-    except Exception as e:
-        return f"An error occurred while retrieving GPU information " \
-               f"(This may be because the GPU is not from NVIDIA): {e}"
-
-
-def get_system_configuration():
-    # CPU Information
-    cpu_info = cpuinfo.get_cpu_info()
-    cpu_model = cpu_info['brand_raw']
-    cpu_usage = psutil.cpu_percent(interval=1)
-
-    # RAM Information
-    ram_info = psutil.virtual_memory()
-    total_ram = ram_info.total / (1024 ** 3)  # Convert to GB
-    available_ram = ram_info.available / (1024 ** 3)  # Convert to GB
-
-    # GPU Information
-    tf_gpus = tf.config.list_physical_devices('GPU')
-    tf_gpu_info = [str(gpu) for gpu in tf_gpus]
-
-    # Get GPU Info
-    gpu_info = get_gpu_details()
-
-    return {
-        'CPU Model': cpu_model,
-        'CPU Usage (%)': cpu_usage,
-        'Total RAM (GB)': total_ram,
-        'Available RAM (GB)': available_ram,
-        'TF Info about GPUs': tf_gpu_info,
-        'GPU Info': gpu_info
-    }
-
-
 def log_execution_details(start_time, hyperparameters, result, model_path, monitor):
     """ Logs execution details to a file. """
     log_file = 'execution_log.json'
