@@ -155,15 +155,13 @@ def main():
     # # V: Minimization of tardiness
     # # L: Minimization of idle time
     # Sofar these environments have been implemented:
-    # [J|nowait,t,gj=1|min(D)] As it is a Job Shop in which the processing time of task, of which only the processing
-    #                     time is known, has to be minimized.
-    # [J,m=1|nowait,f,gj=1|min(T)]
-    # [J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|avg(T)] # In Progress may be buggy
-    environment = "[J,m=1|nowait,f,gj=1|min(T)]"  # Choose between the "[J,m=1|nowait,f|min(T)]", or
-    #                                                          "[J|nowait,t|min(D)] " environment
+    # [J|nowait,t,gj=1|D]
+    # [J,m=1|nowait,f,gj=1|T]
+    # [J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|T]
+    environment = "[J,m=1|nowait,f,gj=1|T]"
 
     # |Environment parameters|
-    max_numb_of_machines = 2  # Maximum number of machines. Has to be 1 if not "Resource" environment
+    max_numb_of_machines = 1  # Maximum number of machines. Has to be 1 if m=1 for the environment
     max_numb_of_tasks = 9  # Maximum number of tasks -> check that dataset has enough entries, else create new one
     max_task_depth = 10  # duration of a task ~= random(1,max_task_depth)
     fixed_max_numbers = False
@@ -173,14 +171,14 @@ def main():
     # If the number of tasks or machines changes (fixed_max_numbers = False) a preference for higher tasks can be set.
     # If set to 0.25  the number of tasks will be a true random
     high_numb_of_tasks_preference = 0.35
-    high_numb_of_machines_preference = 0.8  # Specific to "Resource" environment
+    high_numb_of_machines_preference = 0.8  # Specific to environment with more than one machine
 
     # |Choose Algorithm|
     # Choose between 'supervised' and 'dqn'
     algorithm = 'dqn'
 
     # |DQN algorithm parameters|
-    episodes = 500  # Total number of episodes for training the DQN agent
+    episodes = 5  # Total number of episodes for training the DQN agent
     gamma = 0.85  # Discount factor for future rewards in the Q-learning algorithm
     epsilon = 0.4  # Initial exploration rate in the epsilon-greedy strategy
     alpha = 0.01  # Learning rate, determining how much new information overrides old information
@@ -200,8 +198,9 @@ def main():
 
     # |Example configuration (possible only if numb_of_executions == 1)|
     # This is the example that will be displayed as an example of what the system can do
+    # This is only implemented for few environments and is fixed last, so it may be buggy or even removed
     tasks = [4, 1, 2, 3]
-    numb_of_machines = 2  # Specific to "Resource" environment
+    numb_of_machines = 2  # Specific to environments with more than 1 machine
 
     # Specify data dir name
     dir_name = "2024-01-10"
@@ -228,10 +227,10 @@ def main():
         for _ in range(numb_of_executions):
 
             # Environment setup based on selected type
-            if environment == "[J,m=1|nowait,f,gj=1|min(T)]":
+            if environment == "[J,m=1|nowait,f,gj=1|T]":
                 env = Jm_f_T_JSSProblem(max_numb_of_tasks, max_task_depth, test_set, fixed_max_numbers,
                                         high_numb_of_tasks_preference, dir_name)
-            elif environment == "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|avg(T)]":
+            elif environment == "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|T]":
                 env = Jm_tf_T_JSSProblem(max_numb_of_tasks, test_set, fixed_max_numbers, high_numb_of_tasks_preference,
                                          dir_name)
             else:
@@ -264,7 +263,7 @@ def main():
                                                                 progress_bar=False, get_histories=True)
 
                 result_item = {"histories": histories,
-                          "fitness_curve": fitness_curve}
+                               "fitness_curve": fitness_curve}
 
             result.append(result_item)
 
@@ -278,24 +277,24 @@ def main():
             for item in result:
                 training_accuracy_list.append(item["training_accuracy"])
 
-            vis.show_line_graph(util.calculate_average_sublist(training_accuracy_list),
-                                title="Average Training Accuracy",
-                                subtitle=f"NN average performance of {len(training_accuracy_list)} executions")
+            vis.show_one_line_graph(util.calculate_average_sublist(training_accuracy_list),
+                                    title="Average Training Accuracy",
+                                    subtitle=f"NN average performance of {len(training_accuracy_list)} executions")
         else:
             fitness_curve_list = list()
             for item in result:
                 fitness_curve_list.append(item["fitness_curve"])
 
-            vis.show_line_graph(util.calculate_average_sublist(fitness_curve_list), title="Average Fitness Curve",
-                                subtitle=f"DQN average performance of {len(fitness_curve_list)} executions")
+            vis.show_one_line_graph(util.calculate_average_sublist(fitness_curve_list), title="Average Fitness Curve",
+                                    subtitle=f"DQN average performance of {len(fitness_curve_list)} executions")
 
     else:  # Single execution logic
 
         # Environment setup based on selected type
-        if environment == "[J,m=1|nowait,f,gj=1|min(T)]":
+        if environment == "[J,m=1|nowait,f,gj=1|T]":
             env = Jm_f_T_JSSProblem(max_numb_of_tasks, max_task_depth, test_set, fixed_max_numbers,
                                     high_numb_of_tasks_preference, dir_name)
-        elif environment == "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|avg(T)]":
+        elif environment == "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|T]":
             env = Jm_tf_T_JSSProblem(max_numb_of_tasks, test_set, fixed_max_numbers, high_numb_of_tasks_preference,
                                      dir_name)
         else:
@@ -320,7 +319,7 @@ def main():
                 "validation_accuracy": validation_accuracy
             }
 
-            vis.show_line_graph(training_accuracy, title="Training Accuracy", subtitle=f"DQN")
+            vis.show_line_graph(result.values, result.keys, title="Training Accuracy", subtitle=f"Supervised Approach")
             print("\n")
 
         else:
@@ -337,17 +336,17 @@ def main():
                       "fitness_curve": fitness_curve}
 
             # Fitness curve calculation and visualization
-            vis.show_line_graph(fitness_curve, title="Fitness Curve", subtitle=f"DQN")
+            vis.show_one_line_graph(fitness_curve, title="Fitness Curve", subtitle=f"DQN")
             print("\n")
 
         # Environment-specific accuracy computation and visualization
-        if environment == "[J,m=1|nowait,f,gj=1|min(T)]":
-            print("The validation for [J,m=1|nowait,f,gj=1|min(T)] has a bug which is beeing looked at")
+        if environment == "[J,m=1|nowait,f,gj=1|T]":
+            print("The validation for [J,m=1|nowait,f,gj=1|T] has a bug which is beeing looked at")
             # accuracy = validation.get_Jm_f_T_jss_problem_accurcy(test_set, env, dqn_model, less_comments)
             # print(f"The accuracy of the algorithm is: {accuracy}%")
             # print("This shows the average correctly assorted tasks")
             # result["accuracy"] = accuracy
-        elif environment == "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|avg(T)]":
+        elif environment == "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|T]":
             print("No validation for this environment exists yet")
         else:
             rmse = validation.get_J_t_D_jss_problem_rmse(test_set, env, dqn_model, less_comments)
@@ -361,10 +360,10 @@ def main():
             result["pretrained_rmse"] = pretrained_rmse
         print("")
 
-        if environment != "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|avg(T)]":
+        if environment == "[J|nowait,t,gj=1|D]":
             # Example execution and visualization
             print("THE EXAMPLE ")
-            if environment != "[J,m=1|nowait,f,gj=1|min(T)]":
+            if environment != "[J,m=1|nowait,f,gj=1|T]":
                 print("The Tasks:")
                 vis.visualise_tasks(tasks)
             optimal_policy = dqn.get_pi_from_q(env, dqn_model, env.get_specific_state_list([tasks, numb_of_machines]),

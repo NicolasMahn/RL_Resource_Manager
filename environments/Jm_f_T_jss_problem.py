@@ -57,7 +57,7 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
 
     def get_start_state(self, num_episode: int):
         # Function to initialize the starting state of the environment
-        self.tasks = data_generation.get_start_state(self.env_name, self.numb_of_tasks, num_episode, self.dir_name)
+        self.tasks = data_generation.get_start_state(self.env_name, self.numb_of_tasks, num_episode, self.dir_name)[0]
         self.result = np.zeros((self.numb_of_tasks,), dtype=int)
         return list([self.tasks, self.result])
 

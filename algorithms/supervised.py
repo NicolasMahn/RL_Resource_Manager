@@ -37,7 +37,7 @@ def create_dataset(env, epochs):
     dataset = []
 
     for epoch in range(epochs):
-        state = env.get_start_state()
+        state = env.get_start_state(epoch)
 
         while not env.done(state):
 
