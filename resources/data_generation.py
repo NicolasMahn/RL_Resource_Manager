@@ -22,9 +22,9 @@ done_flag = 8
 is_task_ready = 9
 """
 env_dict = {
-    "[J|nowait,t,gj=1|min(D)]": [0, 1, 2],
-    "[J,m=1|nowait,f,gj=1|min(T)]": [7],
-    "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|avg(T)]": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    "[J|nowait,t,gj=1|D]": [5],
+    "[J,m=1|nowait,f,gj=1|T]": [7],
+    "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|T]": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 }
 
 
