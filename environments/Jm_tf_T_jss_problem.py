@@ -15,7 +15,7 @@ class Jm_tf_T_JSSProblem(GenericEnvironment):
 
     def __init__(self, max_numb_of_tasks, test_set, fixed_max_numbers,
                  high_numb_of_tasks_preference, dir_name):
-        self.env_name = "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|avg(T)]"
+        self.env_name = "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|T]"
         self.dir_name = dir_name
 
         # A state needs the following information for all n*tasks in it:

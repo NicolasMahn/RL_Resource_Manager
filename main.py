@@ -218,7 +218,7 @@ def main():
     numb_of_machines = 2  # Specific to environments with more than 1 machine
 
     # Specify which training data should be used
-    dir_name = "2024-01-10"
+    dir_name = "2024-01-17_episodes-1000_tasks-100"
     # ------------------------------------------------------------------------------------------------------------------
 
     # Execution logic based on the number of runs specified
@@ -251,7 +251,7 @@ def main():
             else:
                 env = J_t_D_JSSProblem(max_numb_of_machines, max_numb_of_tasks, max_task_depth, fixed_max_numbers,
                                        high_numb_of_tasks_preference,
-                                       high_numb_of_machines_preference, test_set)
+                                       high_numb_of_machines_preference, test_set, dir_name)
 
             if algorithm == 'supervised':
                 _, history, _ = supervised.supervised_learning(env, episodes, batch_size, get_pretrained_dnn=True)
@@ -315,7 +315,7 @@ def main():
         else:
             env = J_t_D_JSSProblem(max_numb_of_machines, max_numb_of_tasks, max_task_depth, fixed_max_numbers,
                                    high_numb_of_tasks_preference,
-                                   high_numb_of_machines_preference, test_set)
+                                   high_numb_of_machines_preference, test_set, dir_name)
 
         if algorithm == 'supervised':
             dqn_model, history, pretraining_dqn_model = supervised.supervised_learning(env, episodes, batch_size,

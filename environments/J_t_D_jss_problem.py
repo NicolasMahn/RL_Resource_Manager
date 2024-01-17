@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 
 from .generic_environment import GenericEnvironment
-from resources import util
+from resources import util, data_generation
 from resources.reward_tracker import RewardTracker
 
 # Random number generators
@@ -14,7 +14,10 @@ reward_tracker = RewardTracker()
 class J_t_D_JSSProblem(GenericEnvironment):
 
     def __init__(self, max_numb_of_machines, max_numb_of_tasks, max_task_depth, fixed_max_numbers,
-                 high_numb_of_tasks_preference, high_numb_of_machines_preference, test_set):
+                 high_numb_of_tasks_preference, high_numb_of_machines_preference, test_set, dir_name):
+        self.env_name = "[J|nowait,t,gj=1|D]"
+        self.dir_name = dir_name
+
         # Initialization of the Resource Management Environment
         self.machines = None  # Current state of the machines
         self.possible_actions = None  # Actions that can be taken
@@ -66,15 +69,17 @@ class J_t_D_JSSProblem(GenericEnvironment):
         # Function to get a specific state based on tasks and number of machines
         return self.get_specific_state(tasks=list_[0], numb_of_machines=list_[1])
 
-    def get_start_state(self):
+    def get_start_state(self, num_episode: int):
         # Function to get the starting state of the environment
-        self.numb_of_machines, self.numb_of_tasks, self.tasks = \
+        """self.numb_of_machines, self.numb_of_tasks, self.tasks = \
             util.generate_specific_job_shop(
                 self.max_numb_of_machines, self.max_numb_of_tasks,
                 self.max_task_depth,
                 self.high_numb_of_tasks_preference,
                 self.high_numb_of_machines_preference,
-                self.fixed_max_numbers, self.test_set_tasks)
+                self.fixed_max_numbers, self.test_set_tasks)"""
+
+        self.tasks = data_generation.get_start_state(self.env_name, self.numb_of_tasks, num_episode, self.dir_name)[0]
 
         self.current_cumulative_machines = np.zeros(self.numb_of_machines)
         self.current_max_time = sum([task for task in self.tasks])
