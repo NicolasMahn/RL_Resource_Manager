@@ -56,14 +56,15 @@ def generate_deadlines_with_target_average(numb_of_tasks, target_avg, value_rang
     return deadlines.tolist()
 
 
-def save_list_as_pkl_file(filename: str, result_list: list):
-    with open(get_complete_file_path(check_filename_ending(filename), generating=True), "wb") as f:
+def save_list_as_pkl_file(filename: str, result_list: list, episodes: int, num_tasks: int):
+    with open(get_complete_file_path(check_filename_ending(filename), episodes=episodes, num_tasks=num_tasks,
+                                     generating=True), "wb") as f:
         pickle.dump(result_list, f)
     f.close()
 
 
 def read_list_from_pkl_file(filename: str, dir_name: str):
-    with open(get_complete_file_path(check_filename_ending(filename), dir_name), "rb") as f:
+    with open(get_complete_file_path(check_filename_ending(filename), dir_name=dir_name), "rb") as f:
         result_list = pickle.load(f)
     f.close()
 
@@ -77,10 +78,10 @@ def check_filename_ending(filename: str):
         return filename + ".pkl"
 
 
-def get_complete_file_path(filename: str, dir_name: str = "", generating: bool = False):
+def get_complete_file_path(filename: str = "", episodes: int = "", num_tasks: int = "", dir_name: str = "", generating: bool = False):
     if generating:
         date = datetime.now().date()
-        file_path = os.getcwd() + "/data/train/" + str(date)
+        file_path = os.getcwd() + f"/data/train/{str(date)}_episodes-{episodes}_tasks-{num_tasks}"
     else:
         file_path = os.getcwd() + "/data/train/" + dir_name
     if not os.path.exists(file_path):

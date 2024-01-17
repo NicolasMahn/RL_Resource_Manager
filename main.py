@@ -101,7 +101,7 @@ def main():
 
     setup_gpu()
 
-    # data_gen.generate_new_dataset(100, 25)
+    # data_gen.generate_new_dataset(1000, 100)
 
     # ------------------------------------------------------------------------------------------------------------------
     # Change Hyperparameters here:
@@ -190,10 +190,10 @@ def main():
 
     # |Choose Algorithm|
     # Choose between 'supervised' and 'dqn'
-    algorithm = 'dqn'
+    algorithm = 'supervised'
 
     # |DQN algorithm parameters|
-    episodes = 10  # Total number of episodes for training the DQN agent
+    episodes = 100  # Total number of episodes for training the DQN agent | if supervised epochs not episodes
     gamma = 0.85  # Discount factor for future rewards in the Q-learning algorithm
     epsilon = 0.4  # Initial exploration rate in the epsilon-greedy strategy
     alpha = 0.01  # Learning rate, determining how much new information overrides old information
@@ -217,7 +217,7 @@ def main():
     tasks = [4, 1, 2, 3]
     numb_of_machines = 2  # Specific to environments with more than 1 machine
 
-    # Specify data dir name
+    # Specify which training data should be used
     dir_name = "2024-01-10"
     # ------------------------------------------------------------------------------------------------------------------
 
@@ -334,7 +334,10 @@ def main():
                 "validation_accuracy": validation_accuracy
             }
 
-            vis.show_line_graph(result.values, result.keys, title="Training Accuracy", subtitle=f"Supervised Approach")
+            vis.show_line_graph([training_loss, training_accuracy],
+                                ["training loss", "training accuracy"],
+                                title="Training Accuracy", subtitle=f"Supervised Approach", x_label="epochs",
+                                y_label="accuracy | loss")
             print("\n")
 
         else:

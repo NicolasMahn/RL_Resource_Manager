@@ -78,6 +78,7 @@ def generate_tasks(max_task_depth, numb_of_tasks, test_set_tasks=None):
     return task_array.tolist()  # Convert numpy array to list
 
 
+# execute this method to generate a new dataset
 def generate_new_dataset(episodes: int, numb_of_tasks: int):
     for episode in range(episodes):
         ids = np.arange(0, numb_of_tasks)
@@ -95,7 +96,7 @@ def generate_new_dataset(episodes: int, numb_of_tasks: int):
             [ids, child_foreign_keys, nonpreemtive_flag, lead_time_total, lead_time_todo, processing_time_total,
              processing_time_todo, deadline, done_flag, is_task_ready])
 
-        dgu.save_list_as_pkl_file(str(episode), result_list)
+        dgu.save_list_as_pkl_file(str(episode), result_list, episodes, numb_of_tasks)
 
 
 def get_start_state(env_name: str, number_of_tasks: int, num_episode: int, dir_name: str):
