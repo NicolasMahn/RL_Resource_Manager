@@ -26,7 +26,7 @@ def restore_stdout(stdout_orig):
     sys.stdout = stdout_orig
 
 
-def get_pi_from_q(env, dqn_model, initial_state, less_comments=False):
+def get_pi_from_q(env, dqn_model, initial_state, less_comments=True):
     # If toggled the standard output is restricted to suppress unwanted output
     if less_comments:
         stdout = redirect_stdout()
@@ -75,9 +75,9 @@ def create_dqn_model(dimensions, numb_of_actions):
     layer1 = keras.layers.Dense(64, activation="relu")(state_input)
     layer2 = keras.layers.Dense(128, activation="relu")(layer1)
     flat_layer = keras.layers.Flatten()(layer2)  # Flatten the layers
-    layer3 = keras.layers.Dense(128, activation="relu")(flat_layer)
-    layer4 = keras.layers.Dense(64, activation="relu")(layer3)
-    action = keras.layers.Dense(numb_of_actions, activation="softmax")(layer4)
+    # layer3 = keras.layers.Dense(128, activation="relu")(flat_layer)
+    # layer4 = keras.layers.Dense(64, activation="relu")(layer3)
+    action = keras.layers.Dense(numb_of_actions, activation="linear")(flat_layer)
 
     # Construct and compile the model
     model = keras.Model(inputs=state_input, outputs=action)

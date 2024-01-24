@@ -13,7 +13,7 @@ weighted_randint = util.weighted_randint
 
 class Jm_tf_T_JSSProblem(GenericEnvironment):
 
-    def __init__(self, max_numb_of_tasks, test_set, fixed_max_numbers,
+    def __init__(self, max_numb_of_tasks, fixed_max_numbers,
                  high_numb_of_tasks_preference, dir_name):
         self.env_name = "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|T]"
         self.dir_name = dir_name
@@ -36,10 +36,6 @@ class Jm_tf_T_JSSProblem(GenericEnvironment):
         self.fixed_max_numbers = fixed_max_numbers  # Flag to keep number of tasks constant
         self.high_numb_of_tasks_preference = high_numb_of_tasks_preference  # Preference for high number of tasks
         self.max_numb_of_tasks = max_numb_of_tasks  # Maximum number of tasks in the environment
-
-        # Handling test sets if provided
-        self.test_set = test_set
-        self.test_set_tasks = [item["tasks"] for item in test_set] if test_set is not None else None
 
         # Defining dimensions for the environment
         dimensions = [self.numb_of_attributes, self.max_numb_of_tasks]
@@ -201,13 +197,13 @@ class Jm_tf_T_JSSProblem(GenericEnvironment):
 
         return possible_actions, impossible_actions
 
-    def to_tensor_state(self, state):
+    def pad_state(self, state):
         # Function to prepare the state for Deep Q-Network (DQN) processing
         state_padded = list()
         for s in state:
             s_padded = np.pad(s, (0, self.max_numb_of_tasks - len(s)), constant_values=-1)
             state_padded.append(s_padded)
-        return tf.convert_to_tensor(state_padded)
+        return state_padded
 
     def get_result(self):
         # Function to retrieve the history

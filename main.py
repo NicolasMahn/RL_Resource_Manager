@@ -93,6 +93,125 @@ def log_execution_details(start_time, hyperparameters, result, model_path, monit
         json.dump(existing_logs, file, indent=4)
 
 
+def get_env_from_name(env_name: str, max_numb_of_machines: int, max_numb_of_tasks: int, max_task_depth: int,
+                      fixed_max_numbers: int, high_numb_of_machines_preference: float,
+                      high_numb_of_tasks_preference: float, training_dir_name: str):
+    if env_name == "[J,m=1|nowait,f,gj=1|T]":
+        env = Jm_f_T_JSSProblem(max_numb_of_tasks, max_task_depth, fixed_max_numbers,
+                                high_numb_of_tasks_preference, training_dir_name)
+    elif env_name == "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|T]":
+        env = Jm_tf_T_JSSProblem(max_numb_of_tasks, fixed_max_numbers, high_numb_of_tasks_preference,
+                                 training_dir_name)
+    else:
+        env = J_t_D_JSSProblem(max_numb_of_machines, max_numb_of_tasks, max_task_depth, fixed_max_numbers,
+                               high_numb_of_tasks_preference,
+                               high_numb_of_machines_preference, training_dir_name)
+
+    return env
+
+
+def execute_algorithm(algorithm: str, env, episodes: int, epochs: int, batch_size: int, numb_of_executions: int,
+                      gamma: float = 0.0, epsilon: float = 0.0, alpha: float = 0.0, epsilon_decay: float = 0.0,
+                      min_epsilon: float = 0.0, update_target_network: int = 0):
+    # Algorithm based on chosen algorithm
+    if algorithm == 'supervised':
+        model, history, pretrained_model = supervised.supervised_learning(env, episodes, epochs, batch_size,
+                                                                          get_pretrained_dnn=True)
+
+        return {
+            "training_loss": history.history['loss'],
+            "validation_loss": history.history.get('val_loss', []),
+            "training_accuracy": history.history['accuracy'],
+            "validation_accuracy": history.history.get('val_accuracy', [])
+        }, model, pretrained_model
+
+    else:
+        # Running the Q-learning algorithm
+        model, fitness_curve, pretrained_model, histories = dqn.q_learning(env, episodes, gamma, epsilon, alpha,
+                                                                           epsilon_decay, min_epsilon, batch_size,
+                                                                           update_target_network,
+                                                                           get_pretrained_dqn=True,
+                                                                           progress_bar=(numb_of_executions == 1),
+                                                                           get_histories=True)
+
+        return {"histories": histories,
+                "fitness_curve": fitness_curve}, model, pretrained_model
+
+
+def evaluate_results(env, numb_of_executions: int, algorithm: str, environment: str, result: dict, test_dir_name: str,
+                     pretrained_model, model):
+    print("\nTraining is done displaying some exploratory evaluation results")
+    if numb_of_executions > 1:
+
+        # Result calculation and visualization
+        if algorithm == 'supervised':
+            training_loss_list = list()
+            training_accuracy_list = list()
+            for item in result:
+                training_accuracy_list.append(item["training_accuracy"])
+                training_loss_list.append(item["training_loss"])
+
+            vis.show_one_line_graph(util.calculate_average_sublist(training_loss_list),
+                                    title="Average Training Loss",
+                                    subtitle=f"of {len(training_loss_list)} executions using the Supervised Approach",
+                                    x_label="epochs", y_label="loss")
+            vis.show_one_line_graph(util.calculate_average_sublist(training_accuracy_list),
+                                    title="Average Training Accuracy",
+                                    subtitle=f"of {len(training_accuracy_list)} executions using the Supervised "
+                                             f"Approach", x_label="epochs", y_label="accuracy")
+        else:
+            fitness_curve_list = list()
+            for item in result:
+                fitness_curve_list.append(item["fitness_curve"])
+
+            vis.show_one_line_graph(util.calculate_average_sublist(fitness_curve_list), title="Average Fitness Curve",
+                                    subtitle=f"DQN average performance of {len(fitness_curve_list)} executions")
+
+    else:
+        if algorithm == 'supervised':
+            vis.show_one_line_graph(result["training_loss"], title="Training Loss", subtitle=f"Supervised Approach",
+                                    x_label="epochs", y_label="loss")
+            vis.show_one_line_graph(result["training_accuracy"], title="Training Accuracy",
+                                    subtitle=f"Supervised Approach", x_label="epochs", y_label="accuracy")
+
+        else:
+            vis.show_one_line_graph(result["fitness_curve"], title="Fitness Curve", subtitle=f"DQN")
+            print("\n")
+
+        # Environment-specific accuracy computation and visualization
+        if environment == "[J,m=1|nowait,f,gj=1|T]":
+            loss, accuracy = validation.get_test_loss_and_accuracy(test_dir_name, env, model)
+            pretrained_loss, pretrained_accuracy = validation.get_test_loss_and_accuracy(test_dir_name, env,
+                                                                                         pretrained_model)
+            print(f"The accuracy of the model is: {100*accuracy}% (pretrained model had {100*pretrained_accuracy}%)")
+            print("This shows the average correctly assorted tasks")
+
+            print(f"The mean squared error of the model is: {loss} (pretrained model had {pretrained_loss})")
+            print("Lower is better.")
+
+            result["test_accuracy"] = accuracy
+            result["test_loss"] = loss
+            result["test_mse"] = loss
+
+            result["pretrained_test_accuracy"] = pretrained_accuracy
+            result["pretrained_test_loss"] = pretrained_loss
+            result["pretrained_test_mse"] = pretrained_loss
+
+        """
+        if environment == "[J|nowait,t,gj=1|D]":
+            # Example execution and visualization
+            print("THE EXAMPLE ")
+            if environment != "[J,m=1|nowait,f,gj=1|T]":
+                print("The Tasks:")
+                vis.visualise_tasks(tasks)
+            optimal_policy = dqn.get_pi_from_q(env, model, env.get_specific_state_list([tasks, numb_of_machines]),
+                                               less_comments)
+            print("\nThe Model recommended policy:")
+            vis.visualise_results(optimal_policy, env)
+            print("\n")
+        """
+    return result
+
 def main():
     # Starting monitor tools for the log file
     start_time = time.time()
@@ -100,8 +219,6 @@ def main():
     monitor.start()
 
     setup_gpu()
-
-    # data_gen.generate_new_dataset(1000, 100)
 
     # ------------------------------------------------------------------------------------------------------------------
     # Change Hyperparameters here:
@@ -179,7 +296,7 @@ def main():
     max_numb_of_machines = 1  # Maximum number of machines. Has to be 1 if m=1 for the environment
     max_numb_of_tasks = 9  # Maximum number of tasks -> check that dataset has enough entries, else create new one
     max_task_depth = 10  # duration of a task ~= random(1,max_task_depth)
-    fixed_max_numbers = False
+    fixed_max_numbers = True  # CURRENTLY ONLY TRUE POSSIBLE
     # Toggle whether the number of tasks or machines should stay the same for each training scenario
 
     # |Weights for Environment Probabilities|
@@ -193,7 +310,8 @@ def main():
     algorithm = 'supervised'
 
     # |DQN algorithm parameters|
-    episodes = 100  # Total number of episodes for training the DQN agent | if supervised epochs not episodes
+    episodes = 1000  # Total number of episodes for training the DQN agent
+    epochs = 100  # The number of times every episode should be 'retrained'
     gamma = 0.85  # Discount factor for future rewards in the Q-learning algorithm
     epsilon = 0.4  # Initial exploration rate in the epsilon-greedy strategy
     alpha = 0.01  # Learning rate, determining how much new information overrides old information
@@ -208,7 +326,7 @@ def main():
     model_name = "auto"  # The name the model is saved under
     test_set_abs_size = 20  # Only works if numb_of_executions is 1
     less_comments = True  # Reduce the print statements produced by the algorithm
-    print_hyperparameters = True  # Toggle for printing hyperparameters
+    print_hyperparameters = False  # Toggle for printing hyperparameters
     save_in_log = True
 
     # |Example configuration (possible only if numb_of_executions == 1)|
@@ -218,238 +336,106 @@ def main():
     numb_of_machines = 2  # Specific to environments with more than 1 machine
 
     # Specify which training data should be used
-    dir_name = "2024-01-17_episodes-1000_tasks-100"
+    training_dir_name = "2024-01-23_episodes-1000_tasks-100"
+
+    # Specify which test data should be used
+    test_dir_name = "2024-01-23_unlabeled-dir-date-2024-01-17_epochs-1000_tasks-9_env-[J,m=1-nowait,f,gj=1-T]"
     # ------------------------------------------------------------------------------------------------------------------
 
-    # Execution logic based on the number of runs specified
-    if numb_of_executions == 1:
-        print("\nTraining the DQN model...")
-        progress_bar = None
-        # A test set is created to show the effectiveness of the algorithm
-        _, test_set = generate_test_data(max_numb_of_machines, max_numb_of_tasks, max_task_depth,
-                                         high_numb_of_tasks_preference, high_numb_of_machines_preference,
-                                         test_set_abs_size, fixed_max_numbers)
-    else:
-        print("\nTraining the DQN models...")
-        progress_bar = tqdm(total=numb_of_executions, unit='iterations')
-        test_set = None
+    env = None
+    model = None
+    pretrained_model = None
 
-    result = []
+    result = list()
     model_path = "No Model was saved"
 
     # Multiple execution loop
     if numb_of_executions > 1:
-        for _ in range(numb_of_executions):
+        print(f"\nTraining {numb_of_executions} {algorithm} models with the {environment} environment...")
+        progress_bar = tqdm(total=numb_of_executions, unit='iterations')
 
-            # Environment setup based on selected type
-            if environment == "[J,m=1|nowait,f,gj=1|T]":
-                env = Jm_f_T_JSSProblem(max_numb_of_tasks, max_task_depth, test_set, fixed_max_numbers,
-                                        high_numb_of_tasks_preference, dir_name)
-            elif environment == "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|T]":
-                env = Jm_tf_T_JSSProblem(max_numb_of_tasks, test_set, fixed_max_numbers, high_numb_of_tasks_preference,
-                                         dir_name)
-            else:
-                env = J_t_D_JSSProblem(max_numb_of_machines, max_numb_of_tasks, max_task_depth, fixed_max_numbers,
-                                       high_numb_of_tasks_preference,
-                                       high_numb_of_machines_preference, test_set, dir_name)
+    else:  # Single execution logic
+        print(f"\nTraining the {algorithm} model with the {environment} environment...")
+        progress_bar = None
 
-            if algorithm == 'supervised':
-                _, history, _ = supervised.supervised_learning(env, episodes, batch_size, get_pretrained_dnn=True)
+    for _ in range(numb_of_executions):
 
-                # Extracting metrics from the history object as arrays
-                training_loss = history.history['loss']
-                validation_loss = history.history.get('val_loss', [])  # Empty list if validation loss is not available
-                training_accuracy = history.history['accuracy']
-                validation_accuracy = history.history.get('val_accuracy',
-                                                          [])  # Empty list if validation accuracy is not available
+        # Environment setup based on selected type
+        env = get_env_from_name(environment, max_numb_of_machines, max_numb_of_tasks, max_task_depth, fixed_max_numbers,
+                                high_numb_of_machines_preference, high_numb_of_tasks_preference, training_dir_name)
 
-                result_item = {
-                    "training_loss": training_loss,
-                    "validation_loss": validation_loss,
-                    "training_accuracy": training_accuracy,
-                    "validation_accuracy": validation_accuracy,
-                }
+        # function to generate training data----------------------------------------------------------------------------
+        # data_gen.generate_new_dataset(1000, 100)
 
-            else:
-                # Running the Q-learning algorithm
-                _, fitness_curve, _, histories = dqn.q_learning(env, episodes, gamma, epsilon, alpha, epsilon_decay,
-                                                                min_epsilon, batch_size, update_target_network,
-                                                                get_pretrained_dqn=True,
-                                                                progress_bar=False, get_histories=True)
+        # function to generate test data / labeled data
+        # uses current training data to generate test data
+        # the same training and test data should not be used in combination
+        # number_of_tasks and environment variables should not be changed/need to be changed above
+        # SOFAR ONLY WORKS FOR [J,m=1|nowait,f,gj=1|T] ENVIRONMENT
+        # data_gen.label_training_data(env, epochs=1000, number_of_tasks=max_numb_of_tasks, env_name=environment,
+        #                              unlabeled_data_dir_name="2024-01-17_episodes-1000_tasks-100")
 
-                result_item = {"histories": histories,
-                               "fitness_curve": fitness_curve}
+        # --------------------------------------------------------------------------------------------------------------
 
+        result_item, model, pretrained_model = execute_algorithm(algorithm, env, episodes, epochs, batch_size,
+                                                                 numb_of_executions, gamma, epsilon, alpha,
+                                                                 epsilon_decay, min_epsilon, update_target_network)
+
+        if numb_of_executions > 1:
             result.append(result_item)
 
             if progress_bar:
                 # Update the progress bar
                 progress_bar.update(1)
-
-        # Result calculation and visualization
-        if algorithm == 'supervised':
-            training_accuracy_list = list()
-            for item in result:
-                training_accuracy_list.append(item["training_accuracy"])
-
-            vis.show_one_line_graph(util.calculate_average_sublist(training_accuracy_list),
-                                    title="Average Training Accuracy",
-                                    subtitle=f"NN average performance of {len(training_accuracy_list)} executions")
         else:
-            fitness_curve_list = list()
-            for item in result:
-                fitness_curve_list.append(item["fitness_curve"])
+            result = result_item
 
-            vis.show_one_line_graph(util.calculate_average_sublist(fitness_curve_list), title="Average Fitness Curve",
-                                    subtitle=f"DQN average performance of {len(fitness_curve_list)} executions")
+    result = evaluate_results(env, numb_of_executions, algorithm, environment, result, test_dir_name,
+                              pretrained_model, model)
 
-    else:  # Single execution logic
-
-        # Environment setup based on selected type
-        if environment == "[J,m=1|nowait,f,gj=1|T]":
-            env = Jm_f_T_JSSProblem(max_numb_of_tasks, max_task_depth, test_set, fixed_max_numbers,
-                                    high_numb_of_tasks_preference, dir_name)
-        elif environment == "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|T]":
-            env = Jm_tf_T_JSSProblem(max_numb_of_tasks, test_set, fixed_max_numbers, high_numb_of_tasks_preference,
-                                     dir_name)
-        else:
-            env = J_t_D_JSSProblem(max_numb_of_machines, max_numb_of_tasks, max_task_depth, fixed_max_numbers,
-                                   high_numb_of_tasks_preference,
-                                   high_numb_of_machines_preference, test_set, dir_name)
-
-        if algorithm == 'supervised':
-            dqn_model, history, pretraining_dqn_model = supervised.supervised_learning(env, episodes, batch_size,
-                                                                                       get_pretrained_dnn=True)
-
-            # Extracting metrics from the history object as arrays
-            training_loss = history.history['loss']
-            validation_loss = history.history.get('val_loss', [])  # Empty list if validation loss is not available
-            training_accuracy = history.history['accuracy']
-            validation_accuracy = history.history.get('val_accuracy',
-                                                      [])  # Empty list if validation accuracy is not available
-            result = {
-                "training_loss": training_loss,
-                "validation_loss": validation_loss,
-                "training_accuracy": training_accuracy,
-                "validation_accuracy": validation_accuracy
-            }
-
-            vis.show_line_graph([training_loss, training_accuracy],
-                                ["training loss", "training accuracy"],
-                                title="Training Accuracy", subtitle=f"Supervised Approach", x_label="epochs",
-                                y_label="accuracy | loss")
-            print("\n")
-
-        else:
-            # Running the Q-learning algorithm
-            dqn_model, fitness_curve, pretraining_dqn_model, histories = dqn.q_learning(env, episodes, gamma, epsilon,
-                                                                                        alpha, epsilon_decay,
-                                                                                        min_epsilon, batch_size,
-                                                                                        update_target_network,
-                                                                                        get_pretrained_dqn=True,
-                                                                                        progress_bar=True,
-                                                                                        get_histories=True)
-
-            result = {"histories": histories,
-                      "fitness_curve": fitness_curve}
-
-            # Fitness curve calculation and visualization
-            vis.show_one_line_graph(fitness_curve, title="Fitness Curve", subtitle=f"DQN")
-            print("\n")
-
-        # Environment-specific accuracy computation and visualization
-        if environment == "[J,m=1|nowait,f,gj=1|T]":
-            print("The validation for [J,m=1|nowait,f,gj=1|T] has a bug which is beeing looked at")
-            # accuracy = validation.get_Jm_f_T_jss_problem_accurcy(test_set, env, dqn_model, less_comments)
-            # print(f"The accuracy of the algorithm is: {accuracy}%")
-            # print("This shows the average correctly assorted tasks")
-            # result["accuracy"] = accuracy
-        elif environment == "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|T]":
-            print("No validation for this environment exists yet")
-        else:
-            rmse = validation.get_J_t_D_jss_problem_rmse(test_set, env, dqn_model, less_comments)
-            pretrained_rmse = validation.get_J_t_D_jss_problem_rmse(test_set, env, pretraining_dqn_model, less_comments)
-            print(f"The accuracy of the algorithm is: "
-                  f"{rmse}/"
-                  f"{pretrained_rmse}")
-            print("The accuracy is calculated using the Root Mean Squared Error (RMSE). Lower is better.")
-            print("The second number is the RMSE of the untrained NN")
-            result["rmse"] = rmse
-            result["pretrained_rmse"] = pretrained_rmse
-        print("")
-
-        if environment == "[J|nowait,t,gj=1|D]":
-            # Example execution and visualization
-            print("THE EXAMPLE ")
-            if environment != "[J,m=1|nowait,f,gj=1|T]":
-                print("The Tasks:")
-                vis.visualise_tasks(tasks)
-            optimal_policy = dqn.get_pi_from_q(env, dqn_model, env.get_specific_state_list([tasks, numb_of_machines]),
-                                               less_comments)
-            print("\nThe DQN recommended policy:")
-            vis.visualise_results(optimal_policy, env)
-            print("\n")
-
+    if numb_of_executions == 1:
         # Model saving logic
         if model_name == "auto":
-            model_name = f"{environment}_{algorithm}_{time.strftime('%Y%m%d_%H%M%S')}"
+            save_env_name = util.make_env_name_filename_conform(environment)
+            model_name = f"{save_env_name}_{algorithm}_{time.strftime('%Y%m%d_%H%M%S')}"
         model_path = f'models/{model_name}'
-        dqn_model.save(model_path)
+        model.save(model_path)
+
+    hyperparameters = {
+        'environment': environment,
+        'max_numb_of_machines': max_numb_of_machines,
+        'max_numb_of_tasks': max_numb_of_tasks,
+        'max_task_depth': max_task_depth,
+        'fixed_max_numbers': fixed_max_numbers,
+        'high_numb_of_tasks_preference': high_numb_of_tasks_preference,
+        'high_numb_of_machines_preference': high_numb_of_machines_preference,
+        'algorithm': algorithm,
+        'episodes': episodes,
+        'epochs': epochs,
+        'gamma': gamma,
+        'epsilon': epsilon,
+        'alpha': alpha,
+        'epsilon_decay': epsilon_decay,
+        'min_epsilon': min_epsilon,
+        'batch_size': batch_size,
+        'update_target_network': update_target_network,
+        'numb_of_executions': numb_of_executions,
+        'model_name': model_name,
+        'test_set_abs_size': test_set_abs_size,
+        'less_comments': less_comments,
+        'save_final_dqn_model': save_final_dqn_model,
+        'save_in_log': save_in_log,
+        'training_dir_name': training_dir_name,
+        'test_dir_name': test_dir_name
+    }
 
     # Print hyperparameters if enabled
     if print_hyperparameters:
-        print("environment parameters")
-        print("environment:", environment)
-        print("max_numb_of_machines:", max_numb_of_machines)
-        print("max_numb_of_tasks:", max_numb_of_tasks)
-        print("max_task_depth:", max_task_depth)
-        print("fixed_max_numbers:", fixed_max_numbers)
-        print("high_numb_of_tasks_preference:", high_numb_of_tasks_preference)
-        print("high_numb_of_machines_preference:", high_numb_of_machines_preference)
-        print("")
+        print(hyperparameters)
 
-        print("algorithm parameters")
-        print("episodes:", episodes)
-        print("gamma:", gamma)
-        print("epsilon:", epsilon)
-        print("alpha:", alpha)
-        print("epsilon_decay:", epsilon_decay)
-        print("min_epsilon:", min_epsilon)
-        print("batch_size:", batch_size)
-        print("update_target_network:", update_target_network)
-        print("")
-
-        print("miscellaneous")
-        print("numb_of_executions:", numb_of_executions)
-        print("save_final_dqn_model:", save_final_dqn_model)
-        print("test_set_abs_size:", test_set_abs_size)
-
+    # Save all sorts of details about the execution in the log file
     if save_in_log:
-        hyperparameters = {
-            'environment': environment,
-            'max_numb_of_machines': max_numb_of_machines,
-            'max_numb_of_tasks': max_numb_of_tasks,
-            'max_task_depth': max_task_depth,
-            'fixed_max_numbers': fixed_max_numbers,
-            'high_numb_of_tasks_preference': high_numb_of_tasks_preference,
-            'high_numb_of_machines_preference': high_numb_of_machines_preference,
-            'algorithm': algorithm,
-            'episodes': episodes,
-            'gamma': gamma,
-            'epsilon': epsilon,
-            'alpha': alpha,
-            'epsilon_decay': epsilon_decay,
-            'min_epsilon': min_epsilon,
-            'batch_size': batch_size,
-            'update_target_network': update_target_network,
-            'numb_of_executions': numb_of_executions,
-            'model_name': model_name,
-            'test_set_abs_size': test_set_abs_size,
-            'less_comments': less_comments,
-            'print_hyperparameters': print_hyperparameters,
-        }
         log_execution_details(start_time, hyperparameters, result, model_path, monitor)
-
         print("\nLog file successfully updated")
 
 

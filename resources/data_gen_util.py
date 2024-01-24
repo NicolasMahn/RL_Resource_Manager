@@ -2,6 +2,8 @@ import numpy as np
 import pickle
 import os
 from datetime import datetime
+import re
+import resources.util as util
 
 
 def validate_child_elements(numb_of_tasks: int):
@@ -56,7 +58,36 @@ def generate_deadlines_with_target_average(numb_of_tasks, target_avg, value_rang
     return deadlines.tolist()
 
 
-def save_list_as_pkl_file(filename: str, result_list: list, episodes: int, num_tasks: int):
+def save_labeled_data_as_pkl_file(dataset: list, epochs: int, num_tasks: int, env_name: str,
+                                  unlabeled_data_dir_name: str):
+    date = str(datetime.now().date())
+    unlabeled_data_date = get_date_from_dir_name(unlabeled_data_dir_name)
+    safe_env_name = util.make_env_name_filename_conform(env_name)
+    filename = f"{date}_unlabeled-dir-date-{unlabeled_data_date}_epochs-{epochs}_tasks-{num_tasks}_env-{safe_env_name}"
+    with open(f"{os.getcwd()}/data/test/{check_filename_ending(filename)}", "wb") as f:
+        pickle.dump(dataset, f)
+    f.close()
+
+
+def read_labeled_dataset_from_pkl_file(filename: str):
+    with open(f"{os.getcwd()}/data/test/{check_filename_ending(filename)}", "rb") as f:
+        result = pickle.load(f)
+    f.close()
+    return result
+
+
+def get_date_from_dir_name(unlabeled_data_dir_name: str):
+    # Regular expression pattern for the date format YYYY-MM-DD
+    date_pattern = r'\d{4}-\d{2}-\d{2}'
+
+    # Search for the pattern in the directory name
+    match = re.search(date_pattern, unlabeled_data_dir_name)
+
+    # Return the matched date if found, otherwise return None (as String)
+    return match.group(0) if match else "None"
+
+
+def save_training_data_as_pkl_file(filename: str, result_list: list, episodes: int, num_tasks: int):
     with open(get_complete_file_path(check_filename_ending(filename), episodes=episodes, num_tasks=num_tasks,
                                      generating=True), "wb") as f:
         pickle.dump(result_list, f)
@@ -78,7 +109,8 @@ def check_filename_ending(filename: str):
         return filename + ".pkl"
 
 
-def get_complete_file_path(filename: str = "", episodes: int = "", num_tasks: int = "", dir_name: str = "", generating: bool = False):
+def get_complete_file_path(filename: str = "", episodes: int = "", num_tasks: int = "", dir_name: str = "",
+                           generating: bool = False):
     if generating:
         date = datetime.now().date()
         file_path = os.getcwd() + f"/data/train/{str(date)}_episodes-{episodes}_tasks-{num_tasks}"

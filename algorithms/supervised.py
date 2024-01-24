@@ -6,6 +6,7 @@ from tqdm import tqdm
 import sys
 import pandas as pd
 
+import resources.data_generation as dg
 from resources import util
 from .replay_buffer import ReplayBuffer
 
@@ -33,49 +34,6 @@ def padd_state(env, state):
         state_padded.append(s_padded)
     return state_padded
 
-def create_dataset(env, epochs):
-    dataset = []
-
-    for epoch in range(epochs):
-        state = env.get_start_state(epoch)
-
-        while not env.done(state):
-
-            # Action selection and masking
-            possible_actions, impossible_actions = env.get_possible_actions(state)
-            if len(possible_actions) == 0:
-                break
-
-            chosen_action_index = randint(0, (len(possible_actions)))
-            action = possible_actions[chosen_action_index]
-            action_index = env.action_to_int(action)
-
-            # Take action, observe next state and correctness
-            next_state = env.get_next_state(state, action)
-            correct = env.check_if_step_correct(state, action, next_state)
-
-            # Save data to dataset
-            dataset.append((padd_state(env, state), action_index, correct))
-
-            # Do not run already broken examples
-            if not correct:
-                break
-
-            # Update state
-            state = list(next_state)
-
-    # Convert dataset to DataFrame for easier manipulation
-    df = pd.DataFrame(dataset, columns=['state', 'action', 'correct'])
-    return df
-
-
-def preprocess_data(env, df):
-    # for i, state in enumerate(df['state']):
-    #    print(f"Index {i}, Shape: {np.array(state).shape}")
-    X = np.stack(df['state'].tolist())
-    y = keras.utils.to_categorical(df['action'], num_classes=len(env.actions))
-    return X, y
-
 
 def create_nn_model(input_shape, num_actions):
     model = keras.Sequential([
@@ -84,14 +42,14 @@ def create_nn_model(input_shape, num_actions):
         keras.layers.Flatten(),
         keras.layers.Dense(num_actions, activation='softmax')  # num_actions should be 81 in your case
     ])
-    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
     return model
 
 
-def supervised_learning(env, epochs, batch_size, get_pretrained_dnn=False):
+def supervised_learning(env, episodes, epochs, batch_size, get_pretrained_dnn=False):
     # Generate and preprocess the dataset
-    dataset_df = create_dataset(env, epochs)
-    X, y = preprocess_data(env, dataset_df)
+    dataset = list(dg.create_correct_histories(env, episodes, result_as_unsorted_state_action_pairs=True))
+    X, y = util.preprocess_data(env, dataset)
 
     # Create and train the neural network model
     model = create_nn_model(X.shape[1:], len(env.actions))

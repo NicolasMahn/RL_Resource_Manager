@@ -2,6 +2,7 @@ import numpy as np
 import data_gen_util as dgu
 
 # Random number generators
+shuffle = np.random.shuffle
 random = np.random.random
 randint = np.random.randint
 random_choice = np.random.choice
@@ -13,7 +14,7 @@ The numbers represent the position of each attribute in the list
 ids = 0
 child_foreign_keys = 1
 nonpreemtive_flag = 2
-ead_time_total = 3
+lead_time_total = 3
 lead_time_todo = 4
 processing_time_total = 5
 processing_time_todo = 6
@@ -96,7 +97,7 @@ def generate_new_dataset(episodes: int, numb_of_tasks: int):
             [ids, child_foreign_keys, nonpreemtive_flag, lead_time_total, lead_time_todo, processing_time_total,
              processing_time_todo, deadline, done_flag, is_task_ready])
 
-        dgu.save_list_as_pkl_file(str(episode), result_list, episodes, numb_of_tasks)
+        dgu.save_training_data_as_pkl_file(str(episode), result_list, episodes, numb_of_tasks)
 
 
 def get_start_state(env_name: str, number_of_tasks: int, num_episode: int, dir_name: str):
@@ -107,3 +108,44 @@ def get_start_state(env_name: str, number_of_tasks: int, num_episode: int, dir_n
     if 1 in env_dict.get(env_name):
         temp_result_list = dgu.remove_child_element_keys_that_are_too_high(temp_result_list)
     return temp_result_list
+
+
+def label_training_data(env, epochs: int, number_of_tasks: int, env_name: str, unlabeled_data_dir_name: str):
+    dataset = create_correct_histories(env, epochs, result_as_unsorted_state_action_pairs=True)
+
+    dgu.save_labeled_data_as_pkl_file(dataset, epochs, number_of_tasks, env_name, unlabeled_data_dir_name)
+
+
+def create_correct_histories(env, epochs: int, result_as_unsorted_state_action_pairs: bool=False):
+    dataset = list()
+
+    for epoch in range(epochs):
+        state = env.get_start_state(epoch)
+        data_item = list()
+
+        while not env.done(state):
+
+            # Get the correct action
+            action = env.get_correct_action(state)
+            if not action:
+                break
+            action_index = env.action_to_int(action)
+
+            # Take action, observe next state and correctness
+            next_state = env.get_next_state(state, action)
+
+            # Save data to dataset
+            data_item.append({"state": env.pad_state(state), "action": action_index})
+
+            # Update state
+            state = list(next_state)
+
+        if result_as_unsorted_state_action_pairs:
+            dataset.extend(data_item)
+        else:
+            dataset.append(data_item)
+
+    if result_as_unsorted_state_action_pairs:
+        shuffle(dataset)
+
+    return dataset

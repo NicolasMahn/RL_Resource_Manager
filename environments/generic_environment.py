@@ -1,4 +1,5 @@
 import numpy as np
+import tensorflow as tf
 
 from resources import util
 
@@ -73,4 +74,13 @@ class GenericEnvironment:
     def check_if_step_correct(self, state, action, next_state):
         # Abstract method to calculate the true or actual reward given a state, action, and next state
         raise Exception("get_true_reward was not properly implemented "
+                        "or it might not be possible with this environemnt.")
+
+    def to_tensor_state(self, state):
+        # Function to prepare the state for Deep Q-Network (DQN) processing
+        return tf.convert_to_tensor(self.pad_state(state))
+
+    def pad_state(self, state):
+        # Abstract method to pad state to the maximum possible number of tasks
+        raise Exception("pad_state was not properly implemented "
                         "or it might not be possible with this environemnt.")

@@ -14,7 +14,7 @@ reward_tracker = RewardTracker()
 class J_t_D_JSSProblem(GenericEnvironment):
 
     def __init__(self, max_numb_of_machines, max_numb_of_tasks, max_task_depth, fixed_max_numbers,
-                 high_numb_of_tasks_preference, high_numb_of_machines_preference, test_set, dir_name):
+                 high_numb_of_tasks_preference, high_numb_of_machines_preference, dir_name):
         self.env_name = "[J|nowait,t,gj=1|D]"
         self.dir_name = dir_name
 
@@ -32,10 +32,6 @@ class J_t_D_JSSProblem(GenericEnvironment):
         self.max_numb_of_machines = max_numb_of_machines
         self.max_time = max_numb_of_tasks * max_task_depth
         self.max_task_depth = max_task_depth
-
-        # Handling test sets if provided
-        self.test_set = test_set
-        self.test_set_tasks = [item["tasks"] for item in test_set] if test_set is not None else None
 
         # Defining dimensions and actions for the environment
         dimensions = [self.max_numb_of_machines + 2, self.max_time]
@@ -181,7 +177,7 @@ class J_t_D_JSSProblem(GenericEnvironment):
         start_state.append(np.full(self.current_max_time, step, dtype=int))
         return list(start_state)
 
-    def state_for_dqn(self, state):
+    def pad_state(self, state):
         # Function to prepare the state for Deep Q-Network (DQN) processing
         machines, tasks, step = self.extract_info_from_state(state)
 
@@ -198,7 +194,7 @@ class J_t_D_JSSProblem(GenericEnvironment):
         full_state = [list(t_padded)]
         full_state.extend(ms_padded)
         full_state.append([int(step)] * self.max_time)
-        return tf.convert_to_tensor(full_state)
+        return full_state
 
     def get_result(self):
         # Function to retrieve the result or final state of the environment

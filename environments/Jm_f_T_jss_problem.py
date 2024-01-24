@@ -12,7 +12,7 @@ weighted_randint = util.weighted_randint
 
 class Jm_f_T_JSSProblem(GenericEnvironment):
 
-    def __init__(self, max_numb_of_tasks, max_task_depth, test_set, fixed_max_numbers,
+    def __init__(self, max_numb_of_tasks, max_task_depth, fixed_max_numbers,
                  high_numb_of_tasks_preference, dir_name):
         self.env_name = "[J,m=1|nowait,f,gj=1|T]"
         self.dir_name = dir_name
@@ -24,10 +24,6 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
         self.high_numb_of_tasks_preference = high_numb_of_tasks_preference  # Preference for high number of tasks
         self.max_numb_of_tasks = max_numb_of_tasks  # Maximum number of tasks in the environment
         self.max_task_depth = max_task_depth  # Maximum depth of tasks
-
-        # Handling test sets if provided
-        self.test_set = test_set
-        self.test_set_tasks = [item["tasks"] for item in test_set] if test_set is not None else None
 
         # Defining dimensions for the environment
         dimensions = [2, self.max_numb_of_tasks]
@@ -69,16 +65,28 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
             return False
 
     def check_if_step_correct(self, state, action, next_state):
-
         merged_list = next_state[0] + next_state[1]
         sorted_state = sorted([item for item in merged_list if item != 0])
         result = next_state[1]
         i = 0
         correct = True
         for s in sorted_state:
-            correct = (s == result[i]) and correct
+            correct = ((s != result[i]) ^ (result[i] != 0))
+            if not correct:
+                return correct
             i += 1
         return correct
+
+    def get_correct_action(self, state):
+        # Action selection and masking
+        possible_actions, impossible_actions = self.get_possible_actions(state)
+        if len(possible_actions) == 0:
+            return False
+
+        for possible_action in possible_actions:
+            if self.check_if_step_correct(state, possible_action, self.get_next_state(state, possible_action)):
+                return possible_action
+        return False
 
     def get_reward(self, state, action, next_state):
         # Function to calculate reward based on current state, action, and next state
@@ -143,13 +151,12 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
 
         return possible_actions, impossible_actions
 
-    def to_tensor_state(self, state):
-        # Function to prepare the state for Deep Q-Network (DQN) processing
+    def pad_state(self, state):
         state_padded = list()
         for s in state:
             s_padded = np.pad(s, (0, self.max_numb_of_tasks - len(s)), constant_values=-1)
             state_padded.append(s_padded)
-        return tf.convert_to_tensor(state_padded)
+        return state_padded
 
     def get_result(self):
         # Function to retrieve the result or final state of the environment

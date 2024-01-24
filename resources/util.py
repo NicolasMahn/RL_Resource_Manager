@@ -1,5 +1,6 @@
 import numpy as np
 import math
+from tensorflow import keras
 
 # Random number generators
 random = np.random.random
@@ -184,3 +185,18 @@ def circle_check(sequence, position, find, max_numb_recursion=100):
         return False
     else:
         return circle_check(sequence, sequence[position], find, (max_numb_recursion-1))
+
+
+def preprocess_data(env, dataset):
+    # for i, state in enumerate(df['state']):
+    #    print(f"Index {i}, Shape: {np.array(state).shape}")
+    X = np.stack([d['state'] for d in dataset])
+    y = keras.utils.to_categorical([d['action'] for d in dataset], num_classes=len(env.actions))
+    return X, y
+
+
+def make_env_name_filename_conform(env_name: str):
+    # Replace characters that might cause issues in filenames
+    safe_env_name = env_name.replace('|', '-')
+
+    return safe_env_name
