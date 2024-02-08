@@ -92,7 +92,6 @@ def q_learning(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_
             q_value = q_value + alpha * ((reward + gamma * np.max(next_q_values)) - q_value)
             q_values[action_index] = q_value
 
-
             # Store experience to the replay buffer
             replay_buffer.push(env.to_tensor_state(state), q_values)
 
