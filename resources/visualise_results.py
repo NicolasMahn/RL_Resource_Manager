@@ -70,7 +70,8 @@ def visualise_results(optimal_policy, env):
         i += 1
 
 
-def show_line_graph(data, legend, title="Fitness Curve", subtitle="", x_label="episodes", y_label="return"):
+def show_line_graph(data, legend, title="Fitness Curve", subtitle="", x_label="episodes", y_label="return",
+                    start_with_zero: bool = True):
     # Plot and show a fitness curve using matplotlib
     plt.suptitle(title, fontsize=18)  # title
     plt.title(subtitle, fontsize=10)  # subtitle
@@ -78,16 +79,23 @@ def show_line_graph(data, legend, title="Fitness Curve", subtitle="", x_label="e
     plt.ylabel(y_label)
 
     for i in range(len(data)):
-        plt.plot(data[i], color=task_colors[i], linewidth=3)
+        if start_with_zero:
+            plt.plot(([0] + data[i]), color=task_colors[i], linewidth=3)
+        else:
+            plt.plot(data[i], color=task_colors[i], linewidth=3)
     plt.legend(legend)
     plt.show()
 
 
-def show_one_line_graph(data, title="Fitness Curve", subtitle="", x_label="episodes", y_label="return"):
+def show_one_line_graph(data, title="Fitness Curve", subtitle="", x_label="episodes", y_label="return",
+                        start_with_zero: bool = True):
     # Plot and show a fitness curve using matplotlib
     plt.suptitle(title, fontsize=18)  # title
     plt.title(subtitle, fontsize=10)  # subtitle
     plt.xlabel(x_label)
     plt.ylabel(y_label)
-    plt.plot(data, color="#008855", linewidth=3)
+    if start_with_zero:
+        plt.plot(([0] + data), color="#008855", linewidth=3)
+    else:
+        plt.plot(data, color="#008855", linewidth=3)
     plt.show()

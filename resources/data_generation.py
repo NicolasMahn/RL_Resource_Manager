@@ -118,7 +118,8 @@ def label_training_data(env, epochs: int, number_of_tasks: int, env_name: str, u
 
 def create_correct_histories(env, epochs: int, result_as_unsorted_state_action_pairs: bool=False):
     dataset = list()
-
+    print(epochs)
+    # TODO: Why only 282 datapoints if 1000 requested
     for epoch in range(epochs):
         state = env.get_start_state(epoch)
         data_item = list()
@@ -147,5 +148,7 @@ def create_correct_histories(env, epochs: int, result_as_unsorted_state_action_p
 
     if result_as_unsorted_state_action_pairs:
         shuffle(dataset)
+
+    print(len(dataset))
 
     return dataset

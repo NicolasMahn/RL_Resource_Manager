@@ -101,6 +101,7 @@ class Jm_tf_T_JSSProblem(GenericEnvironment):
             return 1
 
     def get_reward(self, state, action, next_state):
+        """
         # Function to calculate the reward based on the state, action, and next state
         reward = 0.1  # small reward for each step
         j = 0
@@ -114,7 +115,6 @@ class Jm_tf_T_JSSProblem(GenericEnvironment):
 
         # reward += np.average(j)
         # return reward
-
         min_time = float('inf')
         chosen_action = None
         for i, processing_time in enumerate(state[self.processing_time_todo]):
@@ -126,6 +126,8 @@ class Jm_tf_T_JSSProblem(GenericEnvironment):
             return -1
         else:
             return 1
+        """
+        return self.check_if_step_correct(state, action, next_state)
 
     def get_next_state(self, state, action):
         # Function to determine the next state based on the current state and action

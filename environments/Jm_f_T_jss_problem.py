@@ -110,7 +110,7 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
         else:
             reward += -1
 
-        return reward / 2
+        return self.check_if_step_correct(state, action, next_state) #reward / 2
 
     def get_next_state(self, state, action):
         # Function to determine the next state based on the current state and action
