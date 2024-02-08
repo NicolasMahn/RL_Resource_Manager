@@ -266,7 +266,7 @@ def main():
     save_in_log = True
 
     # Specify which training data should be used
-    training_dir_name = "2024-02-04_episodes-690000_tasks-100"
+    training_dir_name = "2024-02-08_episodes-5000_tasks-100_repetition-True"
 
     # Specify which test data should be used
     test_dir_name = "2024-01-23_unlabeled-dir-date-2024-01-17_epochs-1000_tasks-9_env-[J,m=1-nowait,f,gj=1-T]"
@@ -295,7 +295,7 @@ def main():
                                 high_numb_of_machines_preference, high_numb_of_tasks_preference, training_dir_name)
 
         # function to generate training data----------------------------------------------------------------------------
-        # data_gen.generate_new_dataset(1000000, 100)
+        # data_gen.generate_new_dataset(5000, 100, 30, True)
 
         # function to generate test data / labeled data
         # uses current training data to generate test data

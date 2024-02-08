@@ -79,9 +79,32 @@ def generate_tasks(max_task_depth, numb_of_tasks, test_set_tasks=None):
     return task_array.tolist()  # Convert numpy array to list
 
 
+def generate_list_with_training_distribution(episodes: int, threshold_split: int):
+    threshold = int(episodes * (threshold_split / 100))
+    steps = int(threshold * 0.1)
+    training_distribution_list = list()
+    temp_sum = 0
+
+    for i in range(steps, threshold, steps):
+        if temp_sum < threshold:
+            temp_sum += i
+            training_distribution_list.append(temp_sum)
+        else:
+            break
+
+    return training_distribution_list[::-1], threshold
+
+
 # execute this method to generate a new dataset
-def generate_new_dataset(episodes: int, numb_of_tasks: int):
-    for episode in range(episodes):
+def generate_new_dataset(episodes: int, numb_of_tasks: int, threshold_split: int, episode_repetition: bool = False):
+    episode = 0
+    index = 0
+    training_distribution_list = list()
+    if episode_repetition:
+        training_distribution_list, threshold_episode = generate_list_with_training_distribution(episodes,
+                                                                                                 threshold_split)
+
+    while episode < episodes:
         ids = np.arange(0, numb_of_tasks)
         child_foreign_keys = dgu.validate_child_elements(numb_of_tasks)
         nonpreemtive_flag = random_choice(np.arange(0, 2), size=numb_of_tasks)
@@ -97,7 +120,43 @@ def generate_new_dataset(episodes: int, numb_of_tasks: int):
             [ids, child_foreign_keys, nonpreemtive_flag, lead_time_total, lead_time_todo, processing_time_total,
              processing_time_todo, deadline, done_flag, is_task_ready])
 
-        dgu.save_training_data_as_pkl_file(str(episode), result_list, episodes, numb_of_tasks)
+        if episode_repetition:
+            if index < len(training_distribution_list):
+                for temp_episode in range(int(training_distribution_list[index])):
+                    dgu.save_training_data_as_pkl_file(str(episode), result_list, episodes, numb_of_tasks,
+                                                       episode_repetition)
+                    dgu.save_training_data_as_txt_file(str(episode), result_list, episodes, numb_of_tasks,
+                                                       episode_repetition)
+                    episode += 1
+                index += 1
+            else:
+                dgu.save_training_data_as_pkl_file(str(episode), result_list, episodes, numb_of_tasks,
+                                                   episode_repetition)
+                dgu.save_training_data_as_txt_file(str(episode), result_list, episodes, numb_of_tasks,
+                                                   episode_repetition)
+                episode += 1
+        else:
+            dgu.save_training_data_as_pkl_file(str(episode), result_list, episodes, numb_of_tasks, episode_repetition)
+            dgu.save_training_data_as_txt_file(str(episode), result_list, episodes, numb_of_tasks, episode_repetition)
+            episode += 1
+
+    """for episode in range(episodes):
+        ids = np.arange(0, numb_of_tasks)
+        child_foreign_keys = dgu.validate_child_elements(numb_of_tasks)
+        nonpreemtive_flag = random_choice(np.arange(0, 2), size=numb_of_tasks)
+        lead_time_total = random_choice(np.arange(0, 5), size=numb_of_tasks, p=[1 / 2] + [1 / 8] * 4)
+        lead_time_todo = lead_time_total
+        processing_time_total = random_choice(np.arange(1, 10), size=numb_of_tasks)
+        processing_time_todo = processing_time_total
+        deadline = dgu.generate_deadlines_with_target_average(numb_of_tasks, 40, (10, 50))
+        done_flag = np.zeros(numb_of_tasks, dtype=int)
+        is_task_ready = np.ones(numb_of_tasks, dtype=int)
+
+        result_list = list(
+            [ids, child_foreign_keys, nonpreemtive_flag, lead_time_total, lead_time_todo, processing_time_total,
+             processing_time_todo, deadline, done_flag, is_task_ready])
+
+        dgu.save_training_data_as_pkl_file(str(episode), result_list, episodes, numb_of_tasks)"""
 
 
 def get_start_state(env_name: str, number_of_tasks: int, num_episode: int, dir_name: str):
@@ -116,7 +175,7 @@ def label_training_data(env, epochs: int, number_of_tasks: int, env_name: str, u
     dgu.save_labeled_data_as_pkl_file(dataset, epochs, number_of_tasks, env_name, unlabeled_data_dir_name)
 
 
-def create_correct_histories(env, epochs: int, result_as_unsorted_state_action_pairs: bool=False):
+def create_correct_histories(env, epochs: int, result_as_unsorted_state_action_pairs: bool = False):
     dataset = list()
     print(epochs)
     # TODO: Why only 282 datapoints if 1000 requested
