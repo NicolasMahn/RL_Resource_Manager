@@ -63,14 +63,16 @@ def save_labeled_data_as_pkl_file(dataset: list, epochs: int, num_tasks: int, en
     date = str(datetime.now().date())
     unlabeled_data_date = get_date_from_dir_name(unlabeled_data_dir_name)
     safe_env_name = util.make_env_name_filename_conform(env_name)
+    correct_ending = ".pkl"
     filename = f"{date}_unlabeled-dir-date-{unlabeled_data_date}_epochs-{epochs}_tasks-{num_tasks}_env-{safe_env_name}"
-    with open(f"{os.getcwd()}/data/test/{check_filename_ending(filename)}", "wb") as f:
+    with open(f"{os.getcwd()}/data/test/{check_filename_ending(filename, correct_ending)}", "wb") as f:
         pickle.dump(dataset, f)
     f.close()
 
 
 def read_labeled_dataset_from_pkl_file(filename: str):
-    with open(f"{os.getcwd()}/data/test/{check_filename_ending(filename)}", "rb") as f:
+    correct_ending = ".pkl"
+    with open(f"{os.getcwd()}/data/test/{check_filename_ending(filename, correct_ending)}", "rb") as f:
         result = pickle.load(f)
     f.close()
     return result
@@ -87,33 +89,40 @@ def get_date_from_dir_name(unlabeled_data_dir_name: str):
     return match.group(0) if match else "None"
 
 
-def save_training_data_as_pkl_file(filename: str, result_list: list, episodes: int, num_tasks: int):
-    with open(get_complete_file_path(check_filename_ending(filename), episodes=episodes, num_tasks=num_tasks,
-                                     generating=True), "wb") as f:
+def save_training_data_as_pkl_file(filename: str, result_list: list, episodes: int, num_tasks: int, repetition: bool):
+    with open(get_complete_file_path(check_filename_ending(filename, ".pkl"), episodes=episodes, num_tasks=num_tasks,
+                                     generating=True, repetition=repetition), "wb") as f:
         pickle.dump(result_list, f)
     f.close()
 
 
+def save_training_data_as_txt_file(filename: str, result_list: list, episodes: int, num_tasks: int, repetition: bool):
+    with open(get_complete_file_path(check_filename_ending(filename, ".txt"), episodes=episodes, num_tasks=num_tasks,
+                                     generating=True, repetition=repetition), "w") as f:
+        for item in result_list:
+            f.write(str(item) + "\n")
+
+
 def read_list_from_pkl_file(filename: str, dir_name: str):
-    with open(get_complete_file_path(check_filename_ending(filename), dir_name=dir_name), "rb") as f:
+    with open(get_complete_file_path(check_filename_ending(filename, ".pkl"), dir_name=dir_name), "rb") as f:
         result_list = pickle.load(f)
     f.close()
 
     return result_list
 
 
-def check_filename_ending(filename: str):
-    if filename.endswith(".pkl"):
+def check_filename_ending(filename: str, correct_ending: str):
+    if filename.endswith(correct_ending):
         return filename
     else:
-        return filename + ".pkl"
+        return filename + correct_ending
 
 
 def get_complete_file_path(filename: str = "", episodes: int = "", num_tasks: int = "", dir_name: str = "",
-                           generating: bool = False):
+                           generating: bool = False, repetition: bool = False):
     if generating:
         date = datetime.now().date()
-        file_path = os.getcwd() + f"/data/train/{str(date)}_episodes-{episodes}_tasks-{num_tasks}"
+        file_path = os.getcwd() + f"/data/train/{str(date)}_episodes-{episodes}_tasks-{num_tasks}_repetition-{repetition}"
     else:
         file_path = os.getcwd() + "/data/train/" + dir_name
     if not os.path.exists(file_path):
