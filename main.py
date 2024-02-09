@@ -172,7 +172,9 @@ def evaluate_results(env, numb_of_executions: int, algorithm: str, environment: 
                                     subtitle=f"Supervised Approach", x_label="epochs", y_label="accuracy")
 
         else:
-            vis.show_one_line_graph(result["fitness_curve"], title="Fitness Curve", subtitle=f"DQN")
+            poly_fc = vis.get_polynomial_fitness_curve(result["fitness_curve"], 10)
+            vis.show_line_graph([result["fitness_curve"], poly_fc], ["Fitness Curve", "Regressed Fitness Curve"],
+                                title="Fitness Curve", subtitle=f"DQN")
             print("\n")
 
         # Environment-specific accuracy computation and visualization
@@ -247,7 +249,7 @@ def main():
     algorithm = 'dqn'
 
     # |DQN algorithm parameters|
-    episodes = 865  # Total number of episodes for training the DQN agent
+    episodes = 1200  # Total number of episodes for training the DQN agent
     epochs = 1  # The number of times every episode should be 'retrained' | with dqn standard is 1
     gamma = 0.85  # Discount factor for future rewards in the Q-learning algorithm
     epsilon = 0.4  # Initial exploration rate in the epsilon-greedy strategy

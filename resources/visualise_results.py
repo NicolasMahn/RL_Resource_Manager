@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
 # Define a list of colors for representing tasks
 task_colors = [
@@ -71,7 +72,7 @@ def visualise_results(optimal_policy, env):
 
 
 def show_line_graph(data, legend, title="Fitness Curve", subtitle="", x_label="episodes", y_label="return",
-                    start_with_zero: bool = True):
+                    start_with_zero: bool = False):
     # Plot and show a fitness curve using matplotlib
     plt.suptitle(title, fontsize=18)  # title
     plt.title(subtitle, fontsize=10)  # subtitle
@@ -88,7 +89,7 @@ def show_line_graph(data, legend, title="Fitness Curve", subtitle="", x_label="e
 
 
 def show_one_line_graph(data, title="Fitness Curve", subtitle="", x_label="episodes", y_label="return",
-                        start_with_zero: bool = True):
+                        start_with_zero: bool = False):
     # Plot and show a fitness curve using matplotlib
     plt.suptitle(title, fontsize=18)  # title
     plt.title(subtitle, fontsize=10)  # subtitle
@@ -99,3 +100,14 @@ def show_one_line_graph(data, title="Fitness Curve", subtitle="", x_label="episo
     else:
         plt.plot(data, color="#008855", linewidth=3)
     plt.show()
+
+
+def get_polynomial_fitness_curve(fitness_curve, degree):
+    # Perform polynomial regression
+    x = np.arange(len(fitness_curve))
+    coefficients = np.polyfit(x, fitness_curve, degree)
+    polynomial = np.poly1d(coefficients)
+
+    # Generate x values for plotting the fitted polynomial curve
+    x_poly = np.linspace(x[0], x[-1], len(fitness_curve))
+    return polynomial(x_poly)

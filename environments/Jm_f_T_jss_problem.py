@@ -65,9 +65,9 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
             return False
 
     def check_if_step_correct(self, state, action, next_state):
+        result = list(next_state[1])
         merged_list = next_state[0] + next_state[1]
         sorted_state = sorted([item for item in merged_list if item != 0])
-        result = next_state[1]
         i = 0
         correct = True
         for s in sorted_state:
@@ -90,27 +90,19 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
 
     def get_reward(self, state, action, next_state):
         # Function to calculate reward based on current state, action, and next state
-        if action[1] - 1 < 0:
-            if state[0][action[0]] == min(self.tasks):
-                reward = 1
-            else:
-                reward = -1
-        elif state[1][action[1] - 1] <= state[0][action[0]]:
-            reward = 1
-        else:
-            reward = -1
+        current_f = state[0][action[0]]
+        before_position = state[1][0:action[1]]
+        after_position = state[1][action[1]+1:len(state[1])]
+        reward = 0
 
-        if action[1] + 1 >= len(state[1]):
-            if state[0][action[0]] == max(self.tasks):
-                reward += 1
-            else:
-                reward += -1
-        elif state[1][action[1] + 1] >= state[0][action[0]]:
-            reward += 1
-        else:
-            reward += -1
+        if len(before_position) > 0:
+            if max(before_position) <= current_f:
+                reward += 0.5
+        if len(after_position) > 0:
+            if min(after_position) >= current_f or max(after_position) == 0:
+                reward += 0.5
 
-        return self.check_if_step_correct(state, action, next_state) #reward / 2
+        return reward
 
     def get_next_state(self, state, action):
         # Function to determine the next state based on the current state and action
