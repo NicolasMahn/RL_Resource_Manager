@@ -11,7 +11,7 @@ rnd = np.random.random
 randint = np.random.randint
 
 
-def q_learning(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_epsilon, batch_size,
+def ddqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_epsilon, batch_size,
                update_target_network, get_pretrained_dqn=False, progress_bar=True):
     fitness_curve = list()
 
@@ -68,14 +68,17 @@ def q_learning(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_
             reward = env.get_reward(state, action, next_state)
             return_ += reward
 
-            # Get the Q-values for the next state from the target model
             next_state_for_model = np.array([env.to_tensor_state(next_state)])
+            # In Double DQN the q_values are updated with the target and the actual model
+            next_q_values_from_model = dqn_model.predict(next_state_for_model)[0]
+            # Get the Q-values for the next state from the target model
             next_q_values = target_dqn_model.predict(next_state_for_model)[0]
 
             # Calculate the updated Q-value for the taken action
             q_values = actual_q_values
             q_value = q_values[action_index]
-            q_value = q_value + alpha * ((reward + gamma * np.max(next_q_values)) - q_value)
+            next_q_value = next_q_values[np.argmax(next_q_values_from_model)]  # the best next q value
+            q_value = q_value + alpha * ((reward + gamma * next_q_value) - q_value)
             q_values[action_index] = q_value
 
             # Store experience to the replay buffer
@@ -88,8 +91,7 @@ def q_learning(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_
                 if progress_bar:
                     progress_bar.refresh()
 
-                dqn_model.fit(np.array(dqn_input), np.array(dqn_output), verbose=0, epochs=epochs,
-                              use_multiprocessing=True,
+                dqn_model.fit(np.array(dqn_input), np.array(dqn_output), verbose=0, epochs=epochs, use_multiprocessing=True,
                               batch_size=batch_size)
 
                 if progress_bar:

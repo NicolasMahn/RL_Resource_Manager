@@ -20,6 +20,7 @@ from environments.J_t_D_jss_problem import J_t_D_JSSProblem
 from environments.Jm_tf_T_jss_problem import Jm_tf_T_JSSProblem
 
 import algorithms.dqn as dqn
+import algorithms.double_dqn as double_dqn
 import algorithms.supervised as supervised
 
 import resources.data_generation as data_gen
@@ -124,7 +125,13 @@ def execute_algorithm(algorithm: str, env, episodes: int, epochs: int, batch_siz
             "training_accuracy": history.history['accuracy'],
             "validation_accuracy": history.history.get('val_accuracy', [])
         }, model, pretrained_model
-
+    elif algorithm == "ddqn":
+        # Running the Double Q-learning algorithm
+        model, fitness_curve, pretrained_model = double_dqn.ddqn(env, episodes, epochs, gamma, epsilon, alpha,
+                                                                epsilon_decay, min_epsilon, batch_size,
+                                                                update_target_network, get_pretrained_dqn=True,
+                                                                progress_bar=(numb_of_executions == 1))
+        return {"fitness_curve": fitness_curve}, model, pretrained_model
     else:
         # Running the Q-learning algorithm
         model, fitness_curve, pretrained_model = dqn.q_learning(env, episodes, epochs, gamma, epsilon, alpha,
@@ -162,7 +169,8 @@ def evaluate_results(env, numb_of_executions: int, algorithm: str, environment: 
                 fitness_curve_list.append(item["fitness_curve"])
 
             vis.show_one_line_graph(util.calculate_average_sublist(fitness_curve_list), title="Average Fitness Curve",
-                                    subtitle=f"DQN average performance of {len(fitness_curve_list)} executions")
+                                    subtitle=f"{algorithm.upper()} average performance of {len(fitness_curve_list)}"
+                                             f" executions")
 
     else:
         if algorithm == 'supervised':
@@ -174,7 +182,7 @@ def evaluate_results(env, numb_of_executions: int, algorithm: str, environment: 
         else:
             poly_fc = vis.get_polynomial_fitness_curve(result["fitness_curve"], 10)
             vis.show_line_graph([result["fitness_curve"], poly_fc], ["Fitness Curve", "Regressed Fitness Curve"],
-                                title="Fitness Curve", subtitle=f"DQN")
+                                title="Fitness Curve", subtitle=algorithm.upper())
             print("\n")
 
         # Environment-specific accuracy computation and visualization
@@ -229,7 +237,7 @@ def main():
     # [J|nowait,t,gj=1|D]
     # [J,m=1|nowait,f,gj=1|T]
     # [J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|T]
-    environment = "[J,m=1|nowait,f,gj=1|T]"
+    environment = "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|T]"
 
     # |Environment parameters|
     max_numb_of_machines = 1  # Maximum number of machines. Has to be 1 if m=1 for the environment
@@ -245,11 +253,11 @@ def main():
     high_numb_of_machines_preference = 0.8  # Specific to environment with more than one machine
 
     # |Choose Algorithm|
-    # Choose between 'supervised' and 'dqn'
-    algorithm = 'dqn'
+    # Choose between 'supervised', 'dqn' and 'ddqn'
+    algorithm = 'ddqn'
 
     # |DQN algorithm parameters|
-    episodes = 1200  # Total number of episodes for training the DQN agent
+    episodes = 350  # Total number of episodes for training the DQN agent
     epochs = 1  # The number of times every episode should be 'retrained' | with dqn standard is 1
     gamma = 0.85  # Discount factor for future rewards in the Q-learning algorithm
     epsilon = 0.4  # Initial exploration rate in the epsilon-greedy strategy

@@ -12,7 +12,7 @@ class ReplayBuffer:
         self.buffer = []
         self.position = 0
 
-    def push(self, dqn_input, dqn_output):
+    def push(self, dqn_input, dqn_output, td_error):
         if len(self.buffer) < self.capacity:
             self.buffer.append(None)
         self.buffer[self.position] = (dqn_input, dqn_output)
