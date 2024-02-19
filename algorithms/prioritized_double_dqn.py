@@ -3,7 +3,7 @@ from tensorflow import keras
 from tqdm import tqdm
 
 from resources import util
-from .replay_buffer import ReplayBuffer
+from .prioritizing_replay_buffer import PrioritizedReplayBuffer
 from .create_model import create_dqn_model
 
 # Random number generators
@@ -11,9 +11,10 @@ rnd = np.random.random
 randint = np.random.randint
 
 
-def ddqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_epsilon, batch_size, update_target_network,
-         get_pretrained_dqn=False, progress_bar=True):
+def prioritized_ddqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_epsilon, rb_alpha, rb_beta,
+                     rb_beta_end, batch_size, update_target_network, get_pretrained_dqn=False, progress_bar=True):
     fitness_curve = list()
+    beta_increment_per_sampling = (rb_beta_end - rb_beta) / episodes
 
     # Create a progress bar for training
     if progress_bar:
@@ -29,7 +30,7 @@ def ddqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_epsilo
     pretrained_dqn_model.set_weights(dqn_model.get_weights())
 
     # Create Replay Buffer
-    replay_buffer = ReplayBuffer(10000)
+    replay_buffer = PrioritizedReplayBuffer(10000, rb_alpha)
 
     # Main training loop
     for episode in range(episodes):
@@ -78,24 +79,49 @@ def ddqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_epsilo
             q_values = actual_q_values
             q_value = q_values[action_index]
             next_q_value = next_q_values[np.argmax(next_q_values_from_model)]  # the best next q value
-            q_value = (reward + gamma * next_q_value) - q_value
+            td_error = (reward + gamma * next_q_value) - q_value
+            q_value = td_error
             q_values[action_index] = q_value
 
             # Store experience to the replay buffer
-            replay_buffer.push(env.to_tensor_state(state), q_values)
+            replay_buffer.add(env.to_tensor_state(state), q_values, state, td_error)
 
             # Start training when there are enough experiences in the buffer
             if len(replay_buffer) > batch_size:
-                dqn_input, dqn_output = replay_buffer.sample(batch_size)
+                dqn_input, dqn_target, states, idxs = replay_buffer.sample(batch_size, rb_beta)
 
                 if progress_bar:
                     progress_bar.refresh()
 
-                dqn_model.fit(np.array(dqn_input), np.array(dqn_output), verbose=0, epochs=epochs, use_multiprocessing=True,
-                              batch_size=batch_size)
+                dqn_model.fit(np.array(dqn_input), np.array(dqn_target), verbose=0, epochs=epochs,
+                              use_multiprocessing=True, batch_size=batch_size)
 
                 if progress_bar:
                     progress_bar.refresh()
+
+                for i in range(len(idxs)):
+
+                    # Predict current Q-values with the main network
+                    updated_q_values = dqn_model.predict(np.array([dqn_input[i]]))[0]
+                    updated_action = env.actions[util.argmax(updated_q_values)]
+
+                    updated_q_value = updated_q_values[env.action_to_int(updated_action)]
+
+                    updated_next_state = env.get_next_state(states[i], updated_action)
+                    updated_next_state_for_model = np.array([env.to_tensor_state(updated_next_state)])
+                    updated_next_q_values_from_model = dqn_model.predict(updated_next_state_for_model)[0]
+                    updated_next_q_values = target_dqn_model.predict(updated_next_state_for_model)[0]
+
+                    updated_reward = env.get_reward(states[i], updated_action, updated_next_state)
+
+                    # Recalculate TD error using the updated Q-values
+                    updated_next_q_value = updated_next_q_values[np.argmax(updated_next_q_values_from_model)]
+                    updated_td_error = (updated_reward + gamma * updated_next_q_value) - updated_q_value
+
+                    replay_buffer.update(idxs[i], updated_td_error)
+
+                    if progress_bar:
+                        progress_bar.refresh()
 
             # Update state
             state = list(next_state)
@@ -108,6 +134,9 @@ def ddqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_epsilo
 
         # Epsilon decay
         epsilon = max(min_epsilon, epsilon * epsilon_decay)
+
+        # Beta encay
+        rb_beta = min(rb_beta_end, rb_beta + beta_increment_per_sampling)
 
         # Update the progress bar
         if progress_bar:

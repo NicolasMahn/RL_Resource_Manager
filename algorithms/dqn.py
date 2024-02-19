@@ -11,8 +11,8 @@ rnd = np.random.random
 randint = np.random.randint
 
 
-def q_learning(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_epsilon, batch_size,
-               update_target_network, get_pretrained_dqn=False, progress_bar=True):
+def dqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_epsilon, batch_size, update_target_network,
+        get_pretrained_dqn=False, progress_bar=True):
     fitness_curve = list()
 
     # Create a progress bar for training
@@ -20,7 +20,7 @@ def q_learning(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_
         progress_bar = tqdm(total=episodes, unit='episode')
 
     # Initialize DQN and target models
-    dqn_model = create_dqn_model(env.dimensions, len(env.actions))
+    dqn_model = create_dqn_model(env.dimensions, len(env.actions), alpha)
     target_dqn_model = keras.models.clone_model(dqn_model)
     target_dqn_model.set_weights(dqn_model.get_weights())
 
@@ -75,7 +75,7 @@ def q_learning(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_
             # Calculate the updated Q-value for the taken action
             q_values = actual_q_values
             q_value = q_values[action_index]
-            q_value = q_value + alpha * ((reward + gamma * np.max(next_q_values)) - q_value)
+            q_value = (reward + gamma * np.max(next_q_values)) - q_value
             q_values[action_index] = q_value
 
             # Store experience to the replay buffer
@@ -83,12 +83,12 @@ def q_learning(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_
 
             # Start training when there are enough experiences in the buffer
             if len(replay_buffer) > batch_size:
-                dqn_input, dqn_output = replay_buffer.sample(batch_size)
+                dqn_input, dqn_target = replay_buffer.sample(batch_size)
 
                 if progress_bar:
                     progress_bar.refresh()
 
-                dqn_model.fit(np.array(dqn_input), np.array(dqn_output), verbose=0, epochs=epochs,
+                dqn_model.fit(np.array(dqn_input), np.array(dqn_target), verbose=0, epochs=epochs,
                               use_multiprocessing=True,
                               batch_size=batch_size)
 

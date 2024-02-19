@@ -4,15 +4,15 @@ from tqdm import tqdm
 
 from resources import util
 from .replay_buffer import ReplayBuffer
-from .create_model import create_dqn_model
+from .create_model import create_dueling_dqn_model
 
 # Random number generators
 rnd = np.random.random
 randint = np.random.randint
 
 
-def ddqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_epsilon, batch_size, update_target_network,
-         get_pretrained_dqn=False, progress_bar=True):
+def dueling_ddqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_epsilon, batch_size,
+                 update_target_network, get_pretrained_dqn=False, progress_bar=True):
     fitness_curve = list()
 
     # Create a progress bar for training
@@ -20,7 +20,7 @@ def ddqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_epsilo
         progress_bar = tqdm(total=episodes, unit='episode')
 
     # Initialize DQN and target models
-    dqn_model = create_dqn_model(env.dimensions, len(env.actions), alpha)
+    dqn_model = create_dueling_dqn_model(env.dimensions, len(env.actions), alpha)
     target_dqn_model = keras.models.clone_model(dqn_model)
     target_dqn_model.set_weights(dqn_model.get_weights())
 
@@ -40,8 +40,11 @@ def ddqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_epsilo
         while not env.done(state):
 
             # Get Q-values for all actions from DQN
-            actual_q_values = dqn_model.predict(np.array([env.to_tensor_state(state)]), verbose=0)[0]
-            q_values = np.array(list(actual_q_values))
+            dqn_prediction = dqn_model.predict(np.array([env.to_tensor_state(state)]), verbose=0)[0]
+            values = dqn_prediction[0]
+            advantage = dqn_prediction[1]
+            q_values = np.array(values) + (np.array(advantage) - np.mean(advantage))
+            actual_q_values = np.array(list(q_values))
 
             # Action selection and masking
             possible_actions, impossible_actions = \
@@ -70,9 +73,15 @@ def ddqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_epsilo
 
             next_state_for_model = np.array([env.to_tensor_state(next_state)])
             # In Double DQN the q_values are updated with the target and the actual model
-            next_q_values_from_model = dqn_model.predict(next_state_for_model)[0]
+            next_dqn_prediction_from_model = dqn_model.predict(next_state_for_model)[0]
+            values = next_dqn_prediction_from_model[0]
+            advantage = next_dqn_prediction_from_model[1]
+            next_q_values_from_model = np.array(values) + (np.array(advantage) - np.mean(advantage))
             # Get the Q-values for the next state from the target model
-            next_q_values = target_dqn_model.predict(next_state_for_model)[0]
+            next_dqn_prediction = target_dqn_model.predict(next_state_for_model)[0]
+            values = next_dqn_prediction[0]
+            advantage = next_dqn_prediction[1]
+            next_q_values = np.array(values) + (np.array(advantage) - np.mean(advantage))
 
             # Calculate the updated Q-value for the taken action
             q_values = actual_q_values
@@ -82,7 +91,7 @@ def ddqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_epsilo
             q_values[action_index] = q_value
 
             # Store experience to the replay buffer
-            replay_buffer.push(env.to_tensor_state(state), q_values)
+            replay_buffer.push(env.to_tensor_state(state), dqn_prediction)
 
             # Start training when there are enough experiences in the buffer
             if len(replay_buffer) > batch_size:
@@ -91,8 +100,8 @@ def ddqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_epsilo
                 if progress_bar:
                     progress_bar.refresh()
 
-                dqn_model.fit(np.array(dqn_input), np.array(dqn_output), verbose=0, epochs=epochs, use_multiprocessing=True,
-                              batch_size=batch_size)
+                dqn_model.fit(np.array(dqn_input), np.array(dqn_output), verbose=0, epochs=epochs,
+                              use_multiprocessing=True, batch_size=batch_size)
 
                 if progress_bar:
                     progress_bar.refresh()

@@ -12,16 +12,16 @@ class ReplayBuffer:
         self.buffer = []
         self.position = 0
 
-    def push(self, dqn_input, dqn_output):
+    def push(self, dqn_input_sample, dqn_target_sample):
         if len(self.buffer) < self.capacity:
             self.buffer.append(None)
-        self.buffer[self.position] = (dqn_input, dqn_output)
+        self.buffer[self.position] = (dqn_input_sample, dqn_target_sample)
         self.position = (self.position + 1) % self.capacity
 
     def sample(self, batch_size):
         batch = random.sample(self.buffer, batch_size)
-        dqn_input, dqn_output = zip(*batch)  # Unpack pairs of (x, y)
-        return np.array(dqn_input), np.array(dqn_output)
+        dqn_input, dqn_target = zip(*batch)  # Unpack pairs of (x, y)
+        return np.array(dqn_input), np.array(dqn_target)
 
     def __len__(self):
         return len(self.buffer)

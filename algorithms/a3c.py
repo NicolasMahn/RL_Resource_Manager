@@ -11,8 +11,8 @@ rnd = np.random.random
 randint = np.random.randint
 
 
-def ddqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_epsilon, batch_size, update_target_network,
-         get_pretrained_dqn=False, progress_bar=True):
+def a3c(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_epsilon, batch_size, update_target_network,
+        get_pretrained_dqn=False, progress_bar=True):
     fitness_curve = list()
 
     # Create a progress bar for training
@@ -20,7 +20,7 @@ def ddqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_epsilo
         progress_bar = tqdm(total=episodes, unit='episode')
 
     # Initialize DQN and target models
-    dqn_model = create_dqn_model(env.dimensions, len(env.actions), alpha)
+    dqn_model = create_dqn_model(env.dimensions, len(env.actions))
     target_dqn_model = keras.models.clone_model(dqn_model)
     target_dqn_model.set_weights(dqn_model.get_weights())
 
@@ -68,17 +68,14 @@ def ddqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_epsilo
             reward = env.get_reward(state, action, next_state)
             return_ += reward
 
-            next_state_for_model = np.array([env.to_tensor_state(next_state)])
-            # In Double DQN the q_values are updated with the target and the actual model
-            next_q_values_from_model = dqn_model.predict(next_state_for_model)[0]
             # Get the Q-values for the next state from the target model
+            next_state_for_model = np.array([env.to_tensor_state(next_state)])
             next_q_values = target_dqn_model.predict(next_state_for_model)[0]
 
             # Calculate the updated Q-value for the taken action
             q_values = actual_q_values
             q_value = q_values[action_index]
-            next_q_value = next_q_values[np.argmax(next_q_values_from_model)]  # the best next q value
-            q_value = (reward + gamma * next_q_value) - q_value
+            q_value = q_value + alpha * ((reward + gamma * np.max(next_q_values)) - q_value)
             q_values[action_index] = q_value
 
             # Store experience to the replay buffer
@@ -86,12 +83,13 @@ def ddqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay, min_epsilo
 
             # Start training when there are enough experiences in the buffer
             if len(replay_buffer) > batch_size:
-                dqn_input, dqn_output = replay_buffer.sample(batch_size)
+                dqn_input, dqn_target = replay_buffer.sample(batch_size)
 
                 if progress_bar:
                     progress_bar.refresh()
 
-                dqn_model.fit(np.array(dqn_input), np.array(dqn_output), verbose=0, epochs=epochs, use_multiprocessing=True,
+                dqn_model.fit(np.array(dqn_input), np.array(dqn_target), verbose=0, epochs=epochs,
+                              use_multiprocessing=True,
                               batch_size=batch_size)
 
                 if progress_bar:

@@ -19,9 +19,11 @@ from environments.Jm_f_T_jss_problem import Jm_f_T_JSSProblem
 from environments.J_t_D_jss_problem import J_t_D_JSSProblem
 from environments.Jm_tf_T_jss_problem import Jm_tf_T_JSSProblem
 
-import algorithms.dqn as dqn
-import algorithms.double_dqn as double_dqn
-import algorithms.supervised as supervised
+from algorithms.dqn import dqn
+from algorithms.double_dqn import ddqn
+from algorithms.prioritized_double_dqn import prioritized_ddqn
+from algorithms.dueling_double_dqn import dueling_ddqn
+from algorithms.supervised import supervised_learning
 
 import resources.data_generation as data_gen
 from resources.performance_monitor import PerformanceMonitor
@@ -113,11 +115,13 @@ def get_env_from_name(env_name: str, max_numb_of_machines: int, max_numb_of_task
 
 def execute_algorithm(algorithm: str, env, episodes: int, epochs: int, batch_size: int, numb_of_executions: int,
                       gamma: float = 0.0, epsilon: float = 0.0, alpha: float = 0.0, epsilon_decay: float = 0.0,
-                      min_epsilon: float = 0.0, update_target_network: int = 0, less_comments: bool = True):
+                      min_epsilon: float = 0.0, rb_alpha: float = 0.0, rb_beta: float = 0.0, rb_beta_end: float = 0.0,
+                      update_target_network: int = 0):
     # Algorithm based on chosen algorithm
-    if algorithm == 'supervised':
-        model, history, pretrained_model = supervised.supervised_learning(env, episodes, epochs, batch_size,
-                                                                          get_pretrained_dnn=True)
+    if algorithm == 'Supervised':
+        #  Running the Supervised algorithm
+        model, history, pretrained_model = supervised_learning(env, episodes, epochs, batch_size,
+                                                               get_pretrained_dnn=True)
 
         return {
             "training_loss": history.history['loss'],
@@ -125,19 +129,32 @@ def execute_algorithm(algorithm: str, env, episodes: int, epochs: int, batch_siz
             "training_accuracy": history.history['accuracy'],
             "validation_accuracy": history.history.get('val_accuracy', [])
         }, model, pretrained_model
-    elif algorithm == "ddqn":
-        # Running the Double Q-learning algorithm
-        model, fitness_curve, pretrained_model = double_dqn.ddqn(env, episodes, epochs, gamma, epsilon, alpha,
-                                                                epsilon_decay, min_epsilon, batch_size,
-                                                                update_target_network, get_pretrained_dqn=True,
-                                                                progress_bar=(numb_of_executions == 1))
+    elif algorithm == "DDQN":
+        #  Running the Double Q-learning algorithm
+        model, fitness_curve, pretrained_model = ddqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay,
+                                                      min_epsilon, batch_size, update_target_network,
+                                                      get_pretrained_dqn=True, progress_bar=(numb_of_executions == 1))
+        return {"fitness_curve": fitness_curve}, model, pretrained_model
+    elif algorithm == "Prioritized DDQN":
+        #  Running the Prioritized Double Q-learning algorithm
+        model, fitness_curve, pretrained_model = prioritized_ddqn(env, episodes, epochs, gamma, epsilon, alpha,
+                                                                  epsilon_decay, min_epsilon, rb_alpha, rb_beta,
+                                                                  rb_beta_end, batch_size, update_target_network,
+                                                                  get_pretrained_dqn=True,
+                                                                  progress_bar=(numb_of_executions == 1))
+        return {"fitness_curve": fitness_curve}, model, pretrained_model
+    elif algorithm == "Dueling DDQN":
+        #  Running the Prioritized Double Q-learning algorithm
+        model, fitness_curve, pretrained_model = dueling_ddqn(env, episodes, epochs, gamma, epsilon, alpha,
+                                                              epsilon_decay, min_epsilon, batch_size,
+                                                              update_target_network, get_pretrained_dqn=True,
+                                                              progress_bar=(numb_of_executions == 1))
         return {"fitness_curve": fitness_curve}, model, pretrained_model
     else:
-        # Running the Q-learning algorithm
-        model, fitness_curve, pretrained_model = dqn.q_learning(env, episodes, epochs, gamma, epsilon, alpha,
-                                                                epsilon_decay, min_epsilon, batch_size,
-                                                                update_target_network, get_pretrained_dqn=True,
-                                                                progress_bar=(numb_of_executions == 1))
+        #  Running the Q-learning algorithm
+        model, fitness_curve, pretrained_model = dqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay,
+                                                     min_epsilon, batch_size, update_target_network,
+                                                     get_pretrained_dqn=True, progress_bar=(numb_of_executions == 1))
 
         return {"fitness_curve": fitness_curve}, model, pretrained_model
 
@@ -148,7 +165,7 @@ def evaluate_results(env, numb_of_executions: int, algorithm: str, environment: 
     if numb_of_executions > 1:
 
         # Result calculation and visualization
-        if algorithm == 'supervised':
+        if algorithm == 'Supervised':
             training_loss_list = list()
             training_accuracy_list = list()
             for item in result:
@@ -169,11 +186,11 @@ def evaluate_results(env, numb_of_executions: int, algorithm: str, environment: 
                 fitness_curve_list.append(item["fitness_curve"])
 
             vis.show_one_line_graph(util.calculate_average_sublist(fitness_curve_list), title="Average Fitness Curve",
-                                    subtitle=f"{algorithm.upper()} average performance of {len(fitness_curve_list)}"
+                                    subtitle=f"{algorithm} average performance of {len(fitness_curve_list)}"
                                              f" executions")
 
     else:
-        if algorithm == 'supervised':
+        if algorithm == 'Supervised':
             vis.show_one_line_graph(result["training_loss"], title="Training Loss", subtitle=f"Supervised Approach",
                                     x_label="epochs", y_label="loss")
             vis.show_one_line_graph(result["training_accuracy"], title="Training Accuracy",
@@ -182,11 +199,11 @@ def evaluate_results(env, numb_of_executions: int, algorithm: str, environment: 
         else:
             poly_fc = vis.get_polynomial_fitness_curve(result["fitness_curve"], 10)
             vis.show_line_graph([result["fitness_curve"], poly_fc], ["Fitness Curve", "Regressed Fitness Curve"],
-                                title="Fitness Curve", subtitle=algorithm.upper())
+                                title="Fitness Curve", subtitle=algorithm)
             print("\n")
 
         # Environment-specific accuracy computation and visualization
-        if environment == "[J,m=1|nowait,f,gj=1|T]":
+        if environment == "[J,m=1|nowait,f,gj=1|T]" and algorithm != "Dueling DDQN":
             loss, accuracy = validation.get_test_loss_and_accuracy(test_dir_name, env, model)
             # TODO: Accuracy is somewhat false as not all but only one correct action is selected.
             # There are and can be multiple correct actions
@@ -232,12 +249,12 @@ def main():
 
     # |Environment Name|
     # The environments are named after German job shop scheduling classification standards.
-    # Standards defined here: https://de.wikipedia.org/wiki/Klassifikation_von_Maschinenbelegungsmodellen#Literatur
+    # Standards defined here: https://de.wikipedia.org/wiki/Klassifikation_von_Maschinenbelegungsmodellen
     # Sofar these environments have been implemented:
     # [J|nowait,t,gj=1|D]
     # [J,m=1|nowait,f,gj=1|T]
     # [J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|T]
-    environment = "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|T]"
+    environment = "[J,m=1|nowait,f,gj=1|T]"
 
     # |Environment parameters|
     max_numb_of_machines = 1  # Maximum number of machines. Has to be 1 if m=1 for the environment
@@ -253,11 +270,11 @@ def main():
     high_numb_of_machines_preference = 0.8  # Specific to environment with more than one machine
 
     # |Choose Algorithm|
-    # Choose between 'supervised', 'dqn' and 'ddqn'
-    algorithm = 'ddqn'
+    # Choose between 'Supervised', 'DQN', 'DDQN', 'Prioritized DDQN' and 'Dueling DDQN'
+    algorithm = 'Prioritized DDQN'
 
     # |DQN algorithm parameters|
-    episodes = 350  # Total number of episodes for training the DQN agent
+    episodes = 100  # Total number of episodes for training the DQN agent
     epochs = 1  # The number of times every episode should be 'retrained' | with dqn standard is 1
     gamma = 0.85  # Discount factor for future rewards in the Q-learning algorithm
     epsilon = 0.4  # Initial exploration rate in the epsilon-greedy strategy
@@ -266,6 +283,10 @@ def main():
     min_epsilon = 0.01  # Minimum value to which epsilon can decay, ensuring some level of exploration
     batch_size = 128  # Size of the batch used for training the neural network in each iteration
     update_target_network = 5  # Number of episodes after which the target network is updated
+    # Parameters for the Prioritizing Replay Buffer:
+    rb_alpha = 0.6  # This parameter controls how much prioritization is used
+    rb_beta = 0.4  # This parameter is used for adjusting the importance-sampling weights
+    rb_beta_end = 1  # The final value of β at the end of training
 
     # |Miscellaneous settings|
     numb_of_executions = 1  # The number of DQNs trained. If number is > 1 an average fitness curve will be displayed
@@ -319,7 +340,8 @@ def main():
 
         result_item, model, pretrained_model = execute_algorithm(algorithm, env, episodes, epochs, batch_size,
                                                                  numb_of_executions, gamma, epsilon, alpha,
-                                                                 epsilon_decay, min_epsilon, update_target_network)
+                                                                 epsilon_decay, min_epsilon, rb_alpha, rb_beta,
+                                                                 rb_beta_end, update_target_network)
 
         if numb_of_executions > 1:
             result.append(result_item)
@@ -357,6 +379,9 @@ def main():
         'alpha': alpha,
         'epsilon_decay': epsilon_decay,
         'min_epsilon': min_epsilon,
+        'rb_alpha': rb_alpha,
+        'rb_beta': rb_beta,
+        'rb_beta_end': rb_beta_end,
         'batch_size': batch_size,
         'update_target_network': update_target_network,
         'numb_of_executions': numb_of_executions,
