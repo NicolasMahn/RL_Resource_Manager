@@ -1,9 +1,6 @@
 import numpy as np
-from tensorflow import keras
 from tqdm import tqdm
 
-from resources import util
-from .replay_buffer import ReplayBuffer
 from .create_model import create_critic_model, create_actor_model
 
 # Random number generators
@@ -12,7 +9,7 @@ randint = np.random.randint
 
 
 def a2c(env, episodes, gamma, alpha, progress_bar=True):
-    fitness_curve = list()
+    fitness_curve = np.zeros(episodes)
 
     # Create a progress bar for training
     if progress_bar:
@@ -29,45 +26,40 @@ def a2c(env, episodes, gamma, alpha, progress_bar=True):
         # If not final state
         while not env.done(state):
 
-
             # choose an action
-            action_probabilities = actor_model.predict(np.array([env.to_tensor_state(state)]), verbose=0)[0]
-            action = np.random.choice(np.arange(len(action_probabilities)), p=action_probabilities)
-            action_index = env.action_to_int(action)
+            action_probabilities = actor_model.predict(np.array([state]), verbose=0)[0]
+
+            # Choose an action based on the modified probabilities
+            action_index = np.random.choice(np.arange(len(action_probabilities)), p=action_probabilities)
+            action = env.actions[action_index]
 
             # Take action, observe reward and next state
             next_state = env.get_next_state(state, action)
             reward = env.get_reward(state, action, next_state)
             return_ += reward
 
-            critic_value = critic_model.predict(np.array([env.to_tensor_state(state)]), verbose=0)[0]
-            next_critic_value = critic_model.predict(next_state)
+            critic_value = critic_model.predict(np.array([state]), verbose=0)[0]
+            next_critic_value = critic_model.predict(np.array([next_state]), verbose=0)[0]
 
             target = reward + (gamma * next_critic_value * (1 - int(env.done(state))))
             delta = target - critic_value
 
-            actions = np.zeros([1, env.actions])
+            actions = np.zeros([1, len(env.actions)])
             actions[np.arange(1), action_index] = 1
 
-            if progress_bar:
-                progress_bar.refresh()
-
             # Update critic
-            critic_model.fit(np.array([env.to_tensor_state(state)]), target, verbose=0)
-
-            if progress_bar:
-                progress_bar.refresh()
+            critic_model.fit(np.array([state]), target, verbose=0)
 
             # Update actor
-            actor_model.fit(np.array([env.to_tensor_state(state)]), actions, sample_weight=delta.flatten(), verbose=0)
+            actor_model.fit(np.array([state]), actions, sample_weight=delta.flatten(), verbose=0)
+
+            # Update state
+            state = next_state.copy()
 
             if progress_bar:
                 progress_bar.refresh()
 
-            # Update state
-            state = list(next_state)
-
-        fitness_curve.append(return_)
+        fitness_curve[episode] = return_
 
         # Update the progress bar
         if progress_bar:

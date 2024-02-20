@@ -5,11 +5,6 @@ import tensorflow as tf
 import numpy as np
 import os
 
-import psutil
-import platform
-import cpuinfo
-import GPUtil
-
 from resources import util, visualise_results as vis
 
 from evaluation_monitoring import validation
@@ -23,6 +18,7 @@ from algorithms.dqn import dqn
 from algorithms.double_dqn import ddqn
 from algorithms.prioritized_double_dqn import prioritized_ddqn
 from algorithms.dueling_double_dqn import dueling_ddqn
+from algorithms.a2c import a2c
 from algorithms.supervised import supervised_learning
 
 import resources.data_generation as data_gen
@@ -131,13 +127,13 @@ def execute_algorithm(algorithm: str, env, episodes: int, epochs: int, batch_siz
         }, model, pretrained_model
     elif algorithm == "DDQN":
         #  Running the Double Q-learning algorithm
-        model, fitness_curve, pretrained_model = ddqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay,
+        model, fitness_curve, pretrained_model = ddqn(env, episodes, gamma, epsilon, alpha, epsilon_decay,
                                                       min_epsilon, batch_size, update_target_network,
                                                       get_pretrained_dqn=True, progress_bar=(numb_of_executions == 1))
         return {"fitness_curve": fitness_curve}, model, pretrained_model
     elif algorithm == "Prioritized DDQN":
         #  Running the Prioritized Double Q-learning algorithm
-        model, fitness_curve, pretrained_model = prioritized_ddqn(env, episodes, epochs, gamma, epsilon, alpha,
+        model, fitness_curve, pretrained_model = prioritized_ddqn(env, episodes, gamma, epsilon, alpha,
                                                                   epsilon_decay, min_epsilon, rb_alpha, rb_beta,
                                                                   rb_beta_end, batch_size, update_target_network,
                                                                   get_pretrained_dqn=True,
@@ -145,14 +141,19 @@ def execute_algorithm(algorithm: str, env, episodes: int, epochs: int, batch_siz
         return {"fitness_curve": fitness_curve}, model, pretrained_model
     elif algorithm == "Dueling DDQN":
         #  Running the Prioritized Double Q-learning algorithm
-        model, fitness_curve, pretrained_model = dueling_ddqn(env, episodes, epochs, gamma, epsilon, alpha,
+        model, fitness_curve, pretrained_model = dueling_ddqn(env, episodes, gamma, epsilon, alpha,
                                                               epsilon_decay, min_epsilon, batch_size,
                                                               update_target_network, get_pretrained_dqn=True,
                                                               progress_bar=(numb_of_executions == 1))
         return {"fitness_curve": fitness_curve}, model, pretrained_model
+    elif algorithm == "A2C":
+        #  Running the A2C algorithm
+        actor_model, critic_model, fitness_curve = a2c(env, episodes, gamma, alpha,
+                                                       progress_bar=(numb_of_executions == 1))
+        return {"fitness_curve": fitness_curve}, None, None
     else:
         #  Running the Q-learning algorithm
-        model, fitness_curve, pretrained_model = dqn(env, episodes, epochs, gamma, epsilon, alpha, epsilon_decay,
+        model, fitness_curve, pretrained_model = dqn(env, episodes, gamma, epsilon, alpha, epsilon_decay,
                                                      min_epsilon, batch_size, update_target_network,
                                                      get_pretrained_dqn=True, progress_bar=(numb_of_executions == 1))
 
@@ -203,7 +204,7 @@ def evaluate_results(env, numb_of_executions: int, algorithm: str, environment: 
             print("\n")
 
         # Environment-specific accuracy computation and visualization
-        if environment == "[J,m=1|nowait,f,gj=1|T]" and algorithm != "Dueling DDQN":
+        if environment == "[J,m=1|nowait,f,gj=1|T]" and algorithm != "Dueling DDQN" and algorithm != "A2C":
             loss, accuracy = validation.get_test_loss_and_accuracy(test_dir_name, env, model)
             # TODO: Accuracy is somewhat false as not all but only one correct action is selected.
             # There are and can be multiple correct actions
@@ -270,19 +271,19 @@ def main():
     high_numb_of_machines_preference = 0.8  # Specific to environment with more than one machine
 
     # |Choose Algorithm|
-    # Choose between 'Supervised', 'DQN', 'DDQN', 'Prioritized DDQN' and 'Dueling DDQN'
-    algorithm = 'Prioritized DDQN'
+    # Choose between 'Supervised', 'DQN', 'DDQN', 'Prioritized DDQN' and 'Dueling DDQN', 'A2C'
+    algorithm = 'DQN'
 
     # |DQN algorithm parameters|
-    episodes = 100  # Total number of episodes for training the DQN agent
-    epochs = 1  # The number of times every episode should be 'retrained' | with dqn standard is 1
+    episodes = 1000  # Total number of episodes for training the DQN agent
+    epochs = 1  # The number of times every episode should be 'retrained' | with dqn it can only be 1
     gamma = 0.85  # Discount factor for future rewards in the Q-learning algorithm
-    epsilon = 0.4  # Initial exploration rate in the epsilon-greedy strategy
-    alpha = 0.001  # Learning rate, determining how much new information overrides old information
-    epsilon_decay = 0.995  # Decay rate for epsilon, reducing the exploration rate over time
+    epsilon = 1  # Initial exploration rate in the epsilon-greedy strategy
+    alpha = 0.0001  # Learning rate, determining how much new information overrides old information
+    epsilon_decay = 0.9995  # Decay rate for epsilon, reducing the exploration rate over time
     min_epsilon = 0.01  # Minimum value to which epsilon can decay, ensuring some level of exploration
     batch_size = 128  # Size of the batch used for training the neural network in each iteration
-    update_target_network = 5  # Number of episodes after which the target network is updated
+    update_target_network = 50  # Number of episodes after which the target network is updated
     # Parameters for the Prioritizing Replay Buffer:
     rb_alpha = 0.6  # This parameter controls how much prioritization is used
     rb_beta = 0.4  # This parameter is used for adjusting the importance-sampling weights
@@ -297,7 +298,7 @@ def main():
     save_in_log = True
 
     # Specify which training data should be used
-    training_dir_name = "2024-02-08_episodes-5000_tasks-100_repetition-True"
+    training_dir_name = "2024-02-04_episodes-690000_tasks-100"
 
     # Specify which test data should be used
     test_dir_name = "2024-01-23_unlabeled-dir-date-2024-01-17_epochs-1000_tasks-9_env-[J,m=1-nowait,f,gj=1-T]"
@@ -355,7 +356,7 @@ def main():
     result = evaluate_results(env, numb_of_executions, algorithm, environment, result, test_dir_name,
                               pretrained_model, model)
 
-    if numb_of_executions == 1:
+    if numb_of_executions == 1 and algorithm != "A2C":
         # Model saving logic
         if model_name == "auto":
             save_env_name = util.make_env_name_filename_conform(environment)

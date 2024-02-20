@@ -37,8 +37,12 @@ class GenericEnvironment:
         return self._actions_str[int_action]
 
     def action_to_int(self, action):
-        # Converts an action (tuple) to its index in the action list
-        return self.actions.index(action)
+        # Find the index of `action` in the `self.actions` numpy array
+        index = np.where(self.actions == action)[0]
+        if index.size > 0:
+            return index[0]
+        else:
+            raise ValueError("Action not found in actions array.")
 
     def action_possible(self, state, action):
         # Check if a given action is possible in the current state
@@ -46,9 +50,9 @@ class GenericEnvironment:
             return True
         return False
 
-    def get_start_state(self):
+    def get_start_state(self, episode_num):
         # Returns the starting state of the environment
-        return list(self.result)
+        raise Exception("get_start_state was not properly implemented")
 
     # Abstract methods that should be implemented in subclasses
     def get_reward(self, state, action, next_state):
@@ -67,18 +71,10 @@ class GenericEnvironment:
         # Abstract method to check if the current state is a terminal state
         raise Exception("done was not properly implemented")
 
-    def get_possible_actions(self, state):
-        # Abstract method to get possible actions in the current state
-        raise Exception("get_possible_actions was not properly implemented")
-
     def check_if_step_correct(self, state, action, next_state):
         # Abstract method to calculate the true or actual reward given a state, action, and next state
         raise Exception("get_true_reward was not properly implemented "
                         "or it might not be possible with this environemnt.")
-
-    def to_tensor_state(self, state):
-        # Function to prepare the state for Deep Q-Network (DQN) processing
-        return tf.convert_to_tensor(self.pad_state(state))
 
     def pad_state(self, state):
         # Abstract method to pad state to the maximum possible number of tasks

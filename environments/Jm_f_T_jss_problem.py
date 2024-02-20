@@ -26,15 +26,17 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
         self.max_task_depth = max_task_depth  # Maximum depth of tasks
 
         # Defining dimensions for the environment
-        dimensions = [2, self.max_numb_of_tasks]
+        dimensions = np.array([2, self.max_numb_of_tasks])
 
         # Initialize tasks and results
         self.numb_of_tasks = self.max_numb_of_tasks
         self.tasks = np.zeros(self.numb_of_tasks)
         self.result = np.zeros(self.numb_of_tasks, dtype=int)
 
+        self.done_flag = False
+
         # Generate possible actions
-        actions = [[task, i] for task in range(self.max_numb_of_tasks) for i in range(len(self.result))]
+        actions = np.array([[task, i] for task in range(self.max_numb_of_tasks) for i in range(len(self.result))])
 
         # Call to superclass constructor
         super().__init__(dimensions=dimensions, actions=actions, start_state=np.zeros(max_numb_of_tasks))
@@ -44,22 +46,24 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
         self.tasks = tasks
         self.numb_of_tasks = len(self.tasks)
         self.result = np.zeros(self.numb_of_tasks, dtype=int)
-
-        return list([self.tasks, self.result])
+        self.done_flag = False
+        return np.array([self.tasks, self.result])
 
     def get_specific_state_list(self, list_):
         # Function to get a specific state based on provided tasks
+        self.done_flag = False
         return self.get_specific_state(list_[0])
 
     def get_start_state(self, num_episode: int):
         # Function to initialize the starting state of the environment
         self.tasks = data_generation.get_start_state(self.env_name, self.numb_of_tasks, num_episode, self.dir_name)[0]
         self.result = np.zeros((self.numb_of_tasks,), dtype=int)
-        return list([self.tasks, self.result])
+        self.done_flag = False
+        return np.array([self.tasks, self.result])
 
     def done(self, state):
         # Function to check if the current state is a terminal state
-        if sum(state[0]) == 0:
+        if sum(state[0]) == 0 or self.done_flag:
             return True
         else:
             return False
@@ -89,26 +93,30 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
         return False
 
     def get_reward(self, state, action, next_state):
-        # Function to calculate reward based on current state, action, and next state
         current_f = state[0][action[0]]
+
+        # Function to calculate reward based on current state, action, and next state
+        if sum(sum(s) for s in state) != sum((sum(ns) for ns in next_state)) \
+                or np.count_nonzero(state[1] == 0) != (np.count_nonzero(next_state[1] == 0)+1)\
+                or current_f == 0:
+            self.done_flag = True
+            return -10
         before_position = state[1][0:action[1]]
         after_position = state[1][action[1]+1:len(state[1])]
-        reward = 0
+        reward = np.count_nonzero(next_state[1] != 0)
 
         if len(before_position) > 0:
             if max(before_position) <= current_f:
-                reward += 0.5
+                reward += 2
         if len(after_position) > 0:
             if min(after_position) >= current_f or max(after_position) == 0:
-                reward += 0.5
+                reward += 2
 
         return reward
 
     def get_next_state(self, state, action):
         # Function to determine the next state based on the current state and action
-        next_state = list()
-        for s in state:
-            next_state.append(list(s))
+        next_state = state.copy()
 
         next_state[1][action[1]] = next_state[0][action[0]]
         next_state[0][action[0]] = 0
@@ -141,15 +149,24 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
         self.impossible_actions = impossible_actions
         self.possible_actions = possible_actions
 
-        return possible_actions, impossible_actions
+        impossible_action_indices = \
+            [self.action_to_int(action) for action in impossible_actions]
+
+        possible_action_indices = \
+            [self.action_to_int(action) for action in possible_actions]
+
+        return possible_action_indices, impossible_action_indices
 
     def pad_state(self, state):
+        if len(state[0]) == self.max_numb_of_tasks:
+            return state
+
         state_padded = list()
         for s in state:
             s_padded = np.pad(s, (0, self.max_numb_of_tasks - len(s)), constant_values=-1)
             state_padded.append(s_padded)
-        return state_padded
+        return np.array(state_padded)
 
     def get_result(self):
         # Function to retrieve the result or final state of the environment
-        return [r + 1 for r in self.result]
+        return np.array([r + 1 for r in self.result])
