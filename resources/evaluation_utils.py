@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 import json
 import numpy as np
 import os
@@ -20,8 +21,9 @@ def convert_to_serializable(data):
 
 
 def create_new_execution_log_dir(start_time):
-    parent_dir_path = os.path.dirname(os.getcwd())
-    log_dir_path = f"{parent_dir_path}/data/evaluations/{start_time}"
+    parent_dir_path = os.getcwd()
+    log_dir_name = datetime.fromtimestamp(start_time).strftime('%Y-%m-%d---%H:%M:%S')
+    log_dir_path = f"{parent_dir_path}/data/evaluations/{log_dir_name}"
 
     if not os.path.exists(log_dir_path):
         os.makedirs(log_dir_path)
@@ -31,7 +33,6 @@ def create_new_execution_log_dir(start_time):
 
 def log_execution_details(start_time, hyperparameters, result, model_path, monitor):
     """ Logs execution details to a file and saves it in new dir. """
-    # log_file = 'execution_log.json'
 
     monitor.stop()
     monitor.join()
@@ -49,17 +50,6 @@ def log_execution_details(start_time, hyperparameters, result, model_path, monit
 
     log_dir_path = create_new_execution_log_dir(start_time)
     log_file_path = os.path.join(log_dir_path, 'execution_log.json')
-
-    """
-    # Check if the log file already exists and read it
-    if os.path.isfile(log_file):
-        with open(log_file, 'r') as file:
-            existing_logs = json.load(file)
-    else:
-        existing_logs = []
-
-    # Append the new log entry
-    existing_logs.append(new_log_entry)"""
 
     # Write the updated logs back to the file
     with open(log_file_path, 'w') as file:

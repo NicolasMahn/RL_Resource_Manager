@@ -36,6 +36,7 @@ def show_line_graph(data, legend, title="Fitness Curve", subtitle="", x_label="e
 def show_one_line_graph(data, title="Fitness Curve", subtitle="", x_label="episodes", y_label="return",
                         start_with_zero: bool = False):
     # Plot and show a fitness curve using matplotlib
+    fig, ax = plt.subplots()
     plt.suptitle(title, fontsize=18)  # title
     plt.title(subtitle, fontsize=10)  # subtitle
     plt.xlabel(x_label)
@@ -45,6 +46,8 @@ def show_one_line_graph(data, title="Fitness Curve", subtitle="", x_label="episo
     else:
         plt.plot(data, color="#008855", linewidth=3)
     plt.show()
+    
+    return fig
 
 
 def get_polynomial_fitness_curve(fitness_curve, degree):

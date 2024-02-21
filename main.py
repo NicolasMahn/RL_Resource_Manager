@@ -1,8 +1,6 @@
 import time
-import json
 import tqdm
 import tensorflow as tf
-import numpy as np
 import os
 
 from resources import util, visualise_results as vis
@@ -43,54 +41,6 @@ def setup_gpu():
             print("Using a GPU:", gpu.name)
     else:
         print("No GPUs found")
-
-
-def convert_to_serializable(data):
-    """ Convert non-serializable data (like NumPy arrays) to a serializable format. """
-    if isinstance(data, np.integer):
-        return int(data)  # Convert np.int64 to int
-    elif isinstance(data, np.floating):
-        return float(data)  # Convert np.float64 to float
-    if isinstance(data, np.ndarray):
-        return data.tolist()  # Convert ndarray to list
-    elif isinstance(data, dict):
-        return {k: convert_to_serializable(v) for k, v in data.items()}
-    elif isinstance(data, list):
-        return [convert_to_serializable(v) for v in data]
-    return data
-
-
-def log_execution_details(start_time, hyperparameters, result, model_path, monitor):
-    """ Logs execution details to a file. """
-    log_file = 'execution_log.json'
-
-    monitor.stop()
-    monitor.join()
-    stats = monitor.get_statistics()
-
-    execution_time = time.time() - start_time
-    new_log_entry = convert_to_serializable({
-        'Execution Time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time)),
-        'Duration (seconds)': execution_time,
-        'System Configuration': stats,
-        'Hyperparameters': hyperparameters,
-        'Result': result,
-        'Model Path': model_path
-    })
-
-    # Check if the log file already exists and read it
-    if os.path.isfile(log_file):
-        with open(log_file, 'r') as file:
-            existing_logs = json.load(file)
-    else:
-        existing_logs = []
-
-    # Append the new log entry
-    existing_logs.append(new_log_entry)
-
-    # Write the updated logs back to the file
-    with open(log_file, 'w') as file:
-        json.dump(existing_logs, file, indent=4)
 
 
 def get_env_from_name(env_name: str, max_numb_of_machines: int, max_numb_of_tasks: int, max_task_depth: int,
@@ -298,7 +248,7 @@ def main():
     save_log_file = True
 
     # Specify which training data should be used
-    training_dir_name = "2024-02-04_episodes-690000_tasks-100"
+    training_dir_name = "2024-01-17_episodes-1000_tasks-100"
 
     # Specify which test data should be used
     test_dir_name = "2024-02-20_unlabeled-dir-date-2024-01-17_epochs-1000_tasks-9_env-[J,m=1-nowait,f,gj=1-T]"
@@ -399,7 +349,6 @@ def main():
 
     # Save all sorts of details about the execution in the log file
     if save_log_file:
-        log_execution_details(start_time, hyperparameters, result, model_path, monitor)
         evaluation_utils.log_execution_details(start_time, hyperparameters, result, model_path, monitor)
         print("\nLog file successfully updated")
 
