@@ -31,8 +31,17 @@ def create_new_execution_log_dir(start_time):
     return log_dir_path
 
 
+def save_figures_in_log_dir(figure_list, dir_path: str):
+    counter = 1
+    for figure in figure_list:
+        figure.savefig(f"{dir_path}/figure-{counter}")
+        counter += 1
+
+
 def log_execution_details(start_time, hyperparameters, result, model_path, monitor):
     """ Logs execution details to a file and saves it in new dir. """
+
+    print(result["figures"])
 
     monitor.stop()
     monitor.join()
@@ -44,12 +53,15 @@ def log_execution_details(start_time, hyperparameters, result, model_path, monit
         'Duration (seconds)': execution_time,
         'System Configuration': stats,
         'Hyperparameters': hyperparameters,
-        'Result': result,
+        'Result': {
+            'fitness_curve': result["fitness_curve"]},
         'Model Path': model_path
     })
 
     log_dir_path = create_new_execution_log_dir(start_time)
     log_file_path = os.path.join(log_dir_path, 'execution_log.json')
+
+    save_figures_in_log_dir(result['figures'], log_dir_path)
 
     # Write the updated logs back to the file
     with open(log_file_path, 'w') as file:

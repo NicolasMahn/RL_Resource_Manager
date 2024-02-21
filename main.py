@@ -114,6 +114,9 @@ def execute_algorithm(algorithm: str, env, episodes: int, epochs: int, batch_siz
 def evaluate_results(env, numb_of_executions: int, algorithm: str, environment: str, result: dict, test_dir_name: str,
                      pretrained_model, model):
     print("\nTraining is done displaying some exploratory evaluation results")
+    if "figures" not in result:
+        result["figures"] = []
+
     if numb_of_executions > 1:
 
         # Result calculation and visualization
@@ -124,34 +127,39 @@ def evaluate_results(env, numb_of_executions: int, algorithm: str, environment: 
                 training_accuracy_list.append(item["training_accuracy"])
                 training_loss_list.append(item["training_loss"])
 
-            vis.show_one_line_graph(util.calculate_average_sublist(training_loss_list),
-                                    title="Average Training Loss",
-                                    subtitle=f"of {len(training_loss_list)} executions using the Supervised Approach",
-                                    x_label="epochs", y_label="loss", start_with_zero=False)
-            vis.show_one_line_graph(util.calculate_average_sublist(training_accuracy_list),
-                                    title="Average Training Accuracy",
-                                    subtitle=f"of {len(training_accuracy_list)} executions using the Supervised "
-                                             f"Approach", x_label="epochs", y_label="accuracy")
+            result["figures"].append(vis.show_one_line_graph(util.calculate_average_sublist(training_loss_list),
+                                                             title="Average Training Loss",
+                                                             subtitle=f"of {len(training_loss_list)} executions using the Supervised Approach",
+                                                             x_label="epochs", y_label="loss", start_with_zero=False))
+            result["figures"].append(vis.show_one_line_graph(util.calculate_average_sublist(training_accuracy_list),
+                                                             title="Average Training Accuracy",
+                                                             subtitle=f"of {len(training_accuracy_list)} executions using the Supervised "
+                                                                      f"Approach", x_label="epochs",
+                                                             y_label="accuracy"))
         else:
             fitness_curve_list = list()
             for item in result:
                 fitness_curve_list.append(item["fitness_curve"])
 
-            vis.show_one_line_graph(util.calculate_average_sublist(fitness_curve_list), title="Average Fitness Curve",
-                                    subtitle=f"{algorithm} average performance of {len(fitness_curve_list)}"
-                                             f" executions")
+            result["figures"].append(vis.show_one_line_graph(util.calculate_average_sublist(fitness_curve_list),
+                                                             title="Average Fitness Curve",
+                                                             subtitle=f"{algorithm} average performance of {len(fitness_curve_list)}"
+                                                                      f" executions"))
 
     else:
         if algorithm == 'Supervised':
-            vis.show_one_line_graph(result["training_loss"], title="Training Loss", subtitle=f"Supervised Approach",
-                                    x_label="epochs", y_label="loss")
-            vis.show_one_line_graph(result["training_accuracy"], title="Training Accuracy",
-                                    subtitle=f"Supervised Approach", x_label="epochs", y_label="accuracy")
+            result["figures"].append(vis.show_one_line_graph(result["training_loss"], title="Training Loss",
+                                                             subtitle=f"Supervised Approach",
+                                                             x_label="epochs", y_label="loss"))
+            result["figures"].append(vis.show_one_line_graph(result["training_accuracy"], title="Training Accuracy",
+                                                             subtitle=f"Supervised Approach", x_label="epochs",
+                                                             y_label="accuracy"))
 
         else:
             poly_fc = vis.get_polynomial_fitness_curve(result["fitness_curve"], 10)
-            vis.show_line_graph([result["fitness_curve"], poly_fc], ["Fitness Curve", "Regressed Fitness Curve"],
-                                title="Fitness Curve", subtitle=algorithm)
+            result["figures"].append(
+                vis.show_line_graph([result["fitness_curve"], poly_fc], ["Fitness Curve", "Regressed Fitness Curve"],
+                                    title="Fitness Curve", subtitle=algorithm))
             print("\n")
 
         # Environment-specific accuracy computation and visualization
@@ -223,7 +231,7 @@ def main():
 
     # |Choose Algorithm|
     # Choose between 'Supervised', 'DQN', 'DDQN', 'Prioritized DDQN' and 'Dueling DDQN', 'A2C'
-    algorithm = 'A2C'
+    algorithm = 'DQN'
 
     # |DQN algorithm parameters|
     episodes = 20  # Total number of episodes for training the DQN agent
