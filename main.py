@@ -23,6 +23,7 @@ from algorithms.supervised import supervised_learning
 
 import resources.data_generation as data_gen
 from resources.performance_monitor import PerformanceMonitor
+import resources.evaluation_utils as evaluation_utils
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Setting up GPU usage for TensorFlow:
@@ -275,7 +276,7 @@ def main():
     algorithm = 'DQN'
 
     # |DQN algorithm parameters|
-    episodes = 1000  # Total number of episodes for training the DQN agent
+    episodes = 20  # Total number of episodes for training the DQN agent
     epochs = 1  # The number of times every episode should be 'retrained' | with dqn it can only be 1
     gamma = 0.85  # Discount factor for future rewards in the Q-learning algorithm
     epsilon = 1  # Initial exploration rate in the epsilon-greedy strategy
@@ -295,7 +296,7 @@ def main():
     model_name = "auto"  # The name the model is saved under
     test_set_abs_size = 20  # Only works if numb_of_executions is 1
     print_hyperparameters = False  # Toggle for printing hyperparameters
-    save_in_log = True
+    save_log_file = True
 
     # Specify which training data should be used
     training_dir_name = "2024-02-04_episodes-690000_tasks-100"
@@ -389,7 +390,7 @@ def main():
         'model_name': model_name,
         'test_set_abs_size': test_set_abs_size,
         'save_final_dqn_model': save_final_dqn_model,
-        'save_in_log': save_in_log,
+        'save_log_file': save_log_file,
         'training_dir_name': training_dir_name,
         'test_dir_name': test_dir_name
     }
@@ -399,8 +400,9 @@ def main():
         print(hyperparameters)
 
     # Save all sorts of details about the execution in the log file
-    if save_in_log:
+    if save_log_file:
         log_execution_details(start_time, hyperparameters, result, model_path, monitor)
+        evaluation_utils.log_execution_details(start_time, hyperparameters, result, model_path, monitor)
         print("\nLog file successfully updated")
 
 
