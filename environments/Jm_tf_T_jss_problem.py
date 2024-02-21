@@ -101,33 +101,38 @@ class Jm_tf_T_JSSProblem(GenericEnvironment):
             return 1
 
     def get_reward(self, state, action, next_state):
-        """
         # Function to calculate the reward based on the state, action, and next state
-        reward = 0.1  # small reward for each step
-        j = 0
 
-        # for i in range(0, self.numb_of_tasks):
-        # if next_state[self.deadline][i] <= 0 and next_state[self.done_flag][i] != 1:
-        #      reward -= 2 * (next_state[self.deadline][i] * -1 + 1)
-        # if state[self.deadline][i] <= 0 and state[self.done_flag][i] != 1:
-        #    reward += 10 * (next_state[self.deadline][i] * -1 + 1)
-        #   j += next_state[self.deadline][i]
+        action_index = self.action_to_int(action)
+        possible_actions, impossible_actions = self.get_possible_actions(state)
+        pa_index = [self.action_to_int(pa) for pa in possible_actions]
+        ia_index = [self.action_to_int(ia) for ia in impossible_actions]
 
-        # reward += np.average(j)
-        # return reward
-        min_time = float('inf')
-        chosen_action = None
-        for i, processing_time in enumerate(state[self.processing_time_todo]):
-            if state[self.is_task_ready][i] == 1 and state[self.done_flag][i] == 0 and processing_time < min_time:
-                min_time = processing_time
-                chosen_action = i
+        legal = True
 
-        if chosen_action != action:
-            return -1
+        if legal:
+            if action_index in ia_index:
+                print("Action determined to be possible, although impossible")
+                print(f"State: {state}")
+                print(f"Action: {action}")
+                print(f"Next State: {next_state}")
+            min_time = float('inf')
+            chosen_action = None
+            for i, processing_time in enumerate(state[self.processing_time_todo]):
+                if state[self.is_task_ready][i] == 1 and state[self.done_flag][i] == 0 and processing_time < min_time:
+                    min_time = processing_time
+                    chosen_action = i
+
+            if chosen_action != action:
+                return -1
+            else:
+                return 1
         else:
-            return 1
-        """
-        return self.check_if_step_correct(state, action, next_state)
+            if action_index in pa_index:
+                print("Action determined to be impossible, although possible")
+                print(f"State: {state}")
+                print(f"Action: {action}")
+                print(f"Next State: {next_state}")
 
     def get_next_state(self, state, action):
         # Function to determine the next state based on the current state and action

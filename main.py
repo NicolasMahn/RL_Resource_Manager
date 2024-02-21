@@ -116,7 +116,7 @@ def execute_algorithm(algorithm: str, env, episodes: int, epochs: int, batch_siz
     # Algorithm based on chosen algorithm
     if algorithm == 'Supervised':
         #  Running the Supervised algorithm
-        model, history, pretrained_model = supervised_learning(env, episodes, epochs, batch_size,
+        model, history, pretrained_model = supervised_learning(env, episodes, epochs, alpha, batch_size,
                                                                get_pretrained_dnn=True)
 
         return {
@@ -255,10 +255,10 @@ def main():
     # [J|nowait,t,gj=1|D]
     # [J,m=1|nowait,f,gj=1|T]
     # [J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|T]
-    environment = "[J,m=1|nowait,f,gj=1|T]"
+    environment = "[J|nowait,t,gj=1|D]"
 
     # |Environment parameters|
-    max_numb_of_machines = 1  # Maximum number of machines. Has to be 1 if m=1 for the environment
+    max_numb_of_machines = 3  # Maximum number of machines. Has to be 1 if m=1 for the environment
     max_numb_of_tasks = 9  # Maximum number of tasks -> check that dataset has enough entries, else create new one
     max_task_depth = 10  # duration of a task ~= random(1,max_task_depth)
     fixed_max_numbers = True  # CURRENTLY ONLY TRUE POSSIBLE
@@ -272,7 +272,7 @@ def main():
 
     # |Choose Algorithm|
     # Choose between 'Supervised', 'DQN', 'DDQN', 'Prioritized DDQN' and 'Dueling DDQN', 'A2C'
-    algorithm = 'DQN'
+    algorithm = 'A2C'
 
     # |DQN algorithm parameters|
     episodes = 1000  # Total number of episodes for training the DQN agent
@@ -280,10 +280,10 @@ def main():
     gamma = 0.85  # Discount factor for future rewards in the Q-learning algorithm
     epsilon = 1  # Initial exploration rate in the epsilon-greedy strategy
     alpha = 0.0001  # Learning rate, determining how much new information overrides old information
-    epsilon_decay = 0.9995  # Decay rate for epsilon, reducing the exploration rate over time
+    epsilon_decay = 0.995  # Decay rate for epsilon, reducing the exploration rate over time
     min_epsilon = 0.01  # Minimum value to which epsilon can decay, ensuring some level of exploration
     batch_size = 128  # Size of the batch used for training the neural network in each iteration
-    update_target_network = 50  # Number of episodes after which the target network is updated
+    update_target_network = 100  # Number of episodes after which the target network is updated
     # Parameters for the Prioritizing Replay Buffer:
     rb_alpha = 0.6  # This parameter controls how much prioritization is used
     rb_beta = 0.4  # This parameter is used for adjusting the importance-sampling weights
@@ -293,7 +293,6 @@ def main():
     numb_of_executions = 1  # The number of DQNs trained. If number is > 1 an average fitness curve will be displayed
     save_final_dqn_model = False  # Toggle to save DQN model. Only works if numb_of_executions is 1
     model_name = "auto"  # The name the model is saved under
-    test_set_abs_size = 20  # Only works if numb_of_executions is 1
     print_hyperparameters = False  # Toggle for printing hyperparameters
     save_in_log = True
 
@@ -301,7 +300,7 @@ def main():
     training_dir_name = "2024-02-04_episodes-690000_tasks-100"
 
     # Specify which test data should be used
-    test_dir_name = "2024-01-23_unlabeled-dir-date-2024-01-17_epochs-1000_tasks-9_env-[J,m=1-nowait,f,gj=1-T]"
+    test_dir_name = "2024-02-20_unlabeled-dir-date-2024-01-17_epochs-1000_tasks-9_env-[J,m=1-nowait,f,gj=1-T]"
     # ------------------------------------------------------------------------------------------------------------------
 
     env = None
@@ -334,8 +333,8 @@ def main():
         # the same training and test data should not be used in combination
         # number_of_tasks and environment variables should not be changed/need to be changed above
         # SOFAR ONLY WORKS FOR [J,m=1|nowait,f,gj=1|T] ENVIRONMENT
-        # data_gen.label_training_data(env, epochs=10000, number_of_tasks=max_numb_of_tasks, env_name=environment,
-        #                              unlabeled_data_dir_name="2024-02-04_episodes-1000000_tasks-100")
+        # data_gen.label_training_data(env, epochs=1000, number_of_tasks=max_numb_of_tasks, env_name=environment,
+        #                              unlabeled_data_dir_name="2024-01-17_epochs-1000_tasks-9")
 
         # --------------------------------------------------------------------------------------------------------------
 
@@ -387,7 +386,6 @@ def main():
         'update_target_network': update_target_network,
         'numb_of_executions': numb_of_executions,
         'model_name': model_name,
-        'test_set_abs_size': test_set_abs_size,
         'save_final_dqn_model': save_final_dqn_model,
         'save_in_log': save_in_log,
         'training_dir_name': training_dir_name,

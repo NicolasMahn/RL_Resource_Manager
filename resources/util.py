@@ -190,9 +190,14 @@ def circle_check(sequence, position, find, max_numb_recursion=100):
 def preprocess_data(env, dataset):
     # for i, state in enumerate(df['state']):
     #    print(f"Index {i}, Shape: {np.array(state).shape}")
-    X = np.stack([d['state'] for d in dataset])
-    y = keras.utils.to_categorical([d['action'] for d in dataset], num_classes=len(env.actions))
-    return X, y
+    x = np.stack([d['state'] for d in dataset])
+
+    y = np.zeros((len(dataset), len(env.actions)))  # Initialize matrix of zeros
+    for i, d in enumerate(dataset):
+        # Assuming d['correct_actions'] contains indices of correct actions
+        for action_index in d['correct_actions']:
+            y[i, action_index] = 1  # Set corresponding positions to 1
+    return x, y
 
 
 def make_env_name_filename_conform(env_name: str):

@@ -81,16 +81,16 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
             i += 1
         return correct
 
-    def get_correct_action(self, state):
+    def get_correct_actions(self, state):
+        correct_actions = list()
         # Action selection and masking
         possible_actions, impossible_actions = self.get_possible_actions(state)
         if len(possible_actions) == 0:
-            return False
-
+            return correct_actions
         for possible_action in possible_actions:
             if self.check_if_step_correct(state, possible_action, self.get_next_state(state, possible_action)):
-                return possible_action
-        return False
+                correct_actions.append(possible_action)
+        return correct_actions
 
     def get_reward(self, state, action, next_state):
         current_f = state[0][action[0]]
@@ -103,7 +103,8 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
             return -10
         before_position = state[1][0:action[1]]
         after_position = state[1][action[1]+1:len(state[1])]
-        reward = np.count_nonzero(next_state[1] != 0)
+        # reward = np.count_nonzero(next_state[1] != 0)
+        reward = 0
 
         if len(before_position) > 0:
             if max(before_position) <= current_f:
@@ -146,16 +147,7 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
                     for i in range(self.max_numb_of_tasks):
                         impossible_actions.append([task, i])
 
-        self.impossible_actions = impossible_actions
-        self.possible_actions = possible_actions
-
-        impossible_action_indices = \
-            [self.action_to_int(action) for action in impossible_actions]
-
-        possible_action_indices = \
-            [self.action_to_int(action) for action in possible_actions]
-
-        return possible_action_indices, impossible_action_indices
+        return possible_actions, impossible_actions
 
     def pad_state(self, state):
         if len(state[0]) == self.max_numb_of_tasks:
