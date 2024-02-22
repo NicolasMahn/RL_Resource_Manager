@@ -136,3 +136,5 @@ dmypy.json
 
 # TMP the requirements.txt needs to be removed as there are unexplained problems
 # /requirements.txt
+
+/data/evaluations

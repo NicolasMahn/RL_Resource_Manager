@@ -45,54 +45,6 @@ def setup_gpu():
         print("No GPUs found")
 
 
-def convert_to_serializable(data):
-    """ Convert non-serializable data (like NumPy arrays) to a serializable format. """
-    if isinstance(data, np.integer):
-        return int(data)  # Convert np.int64 to int
-    elif isinstance(data, np.floating):
-        return float(data)  # Convert np.float64 to float
-    if isinstance(data, np.ndarray):
-        return data.tolist()  # Convert ndarray to list
-    elif isinstance(data, dict):
-        return {k: convert_to_serializable(v) for k, v in data.items()}
-    elif isinstance(data, list):
-        return [convert_to_serializable(v) for v in data]
-    return data
-
-
-def log_execution_details(start_time, hyperparameters, result, model_path, monitor):
-    """ Logs execution details to a file. """
-    log_file = 'execution_log.json'
-
-    monitor.stop()
-    monitor.join()
-    stats = monitor.get_statistics()
-
-    execution_time = time.time() - start_time
-    new_log_entry = convert_to_serializable({
-        'Execution Time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time)),
-        'Duration (seconds)': execution_time,
-        'System Configuration': stats,
-        'Hyperparameters': hyperparameters,
-        'Result': result,
-        'Model Path': model_path
-    })
-
-    # Check if the log file already exists and read it
-    if os.path.isfile(log_file):
-        with open(log_file, 'r') as file:
-            existing_logs = json.load(file)
-    else:
-        existing_logs = []
-
-    # Append the new log entry
-    existing_logs.append(new_log_entry)
-
-    # Write the updated logs back to the file
-    with open(log_file, 'w') as file:
-        json.dump(existing_logs, file, indent=4)
-
-
 def get_env_from_name(env_name: str, max_numb_of_machines: int, max_numb_of_tasks: int, max_task_depth: int,
                       fixed_max_numbers: int, high_numb_of_machines_preference: float,
                       high_numb_of_tasks_preference: float, training_dir_name: str):
@@ -164,6 +116,9 @@ def execute_algorithm(algorithm: str, env, episodes: int, epochs: int, batch_siz
 def evaluate_results(env, numb_of_executions: int, algorithm: str, environment: str, result: dict, test_dir_name: str,
                      pretrained_model, model):
     print("\nTraining is done displaying some exploratory evaluation results")
+    if "figures" not in result:
+        result["figures"] = []
+
     if numb_of_executions > 1:
 
         # Result calculation and visualization
@@ -174,39 +129,46 @@ def evaluate_results(env, numb_of_executions: int, algorithm: str, environment: 
                 training_accuracy_list.append(item["training_accuracy"])
                 training_loss_list.append(item["training_loss"])
 
-            vis.show_one_line_graph(util.calculate_average_sublist(training_loss_list),
-                                    title="Average Training Loss",
-                                    subtitle=f"of {len(training_loss_list)} executions using the Supervised Approach",
-                                    x_label="epochs", y_label="loss", start_with_zero=False)
-            vis.show_one_line_graph(util.calculate_average_sublist(training_accuracy_list),
-                                    title="Average Training Accuracy",
-                                    subtitle=f"of {len(training_accuracy_list)} executions using the Supervised "
-                                             f"Approach", x_label="epochs", y_label="accuracy")
+            result["figures"].append(vis.show_one_line_graph(util.calculate_average_sublist(training_loss_list),
+                                                             title="Average Training Loss",
+                                                             subtitle=f"of {len(training_loss_list)} executions using the Supervised Approach",
+                                                             x_label="epochs", y_label="loss", start_with_zero=False))
+            result["figures"].append(vis.show_one_line_graph(util.calculate_average_sublist(training_accuracy_list),
+                                                             title="Average Training Accuracy",
+                                                             subtitle=f"of {len(training_accuracy_list)} executions using the Supervised "
+                                                                      f"Approach", x_label="epochs",
+                                                             y_label="accuracy"))
         else:
             fitness_curve_list = list()
             for item in result:
                 fitness_curve_list.append(item["fitness_curve"])
 
-            vis.show_one_line_graph(util.calculate_average_sublist(fitness_curve_list), title="Average Fitness Curve",
-                                    subtitle=f"{algorithm} average performance of {len(fitness_curve_list)}"
-                                             f" executions")
+            result["figures"].append(vis.show_one_line_graph(util.calculate_average_sublist(fitness_curve_list),
+                                                             title="Average Fitness Curve",
+                                                             subtitle=f"{algorithm} average performance of {len(fitness_curve_list)}"
+                                                                      f" executions"))
 
     else:
         if algorithm == 'Supervised':
-            vis.show_one_line_graph(result["training_loss"], title="Training Loss", subtitle=f"Supervised Approach",
-                                    x_label="epochs", y_label="loss")
-            vis.show_one_line_graph(result["training_accuracy"], title="Training Accuracy",
-                                    subtitle=f"Supervised Approach", x_label="epochs", y_label="accuracy")
+            result["figures"].append(vis.show_one_line_graph(result["training_loss"], title="Training Loss",
+                                                             subtitle=f"Supervised Approach",
+                                                             x_label="epochs", y_label="loss"))
+            result["figures"].append(vis.show_one_line_graph(result["training_accuracy"], title="Training Accuracy",
+                                                             subtitle=f"Supervised Approach", x_label="epochs",
+                                                             y_label="accuracy"))
 
         else:
             poly_fc = vis.get_polynomial_fitness_curve(result["fitness_curve"], 10)
-            vis.show_line_graph([result["fitness_curve"], poly_fc], ["Fitness Curve", "Regressed Fitness Curve"],
-                                title="Fitness Curve", subtitle=f"{algorithm} on {environment} environment")
+            result["figures"].append(
+                vis.show_line_graph([result["fitness_curve"], poly_fc], ["Fitness Curve", "Regressed Fitness Curve"],
+                                    title="Fitness Curve", subtitle=f"{algorithm} on {environment} environment"))
             print("\n")
 
         # Environment-specific accuracy computation and visualization
         if environment == "[J,m=1|nowait,f,gj=1|T]" and algorithm != "Duelling DDQN" and algorithm != "A2C":
             loss, accuracy = validation.get_test_loss_and_accuracy(test_dir_name, env, model)
+            # TODO: Accuracy is somewhat false as not all but only one correct action is selected.
+            # There are and can be multiple correct actions
             pretrained_loss, pretrained_accuracy = validation.get_test_loss_and_accuracy(test_dir_name, env,
                                                                                          pretrained_model)
             print(
@@ -259,7 +221,7 @@ def main():
     high_numb_of_machines_preference = 0.8  # Specific to environment with more than one machine
 
     # |Choose Algorithm|
-    # Choose between 'Supervised', 'DQN', 'DDQN', 'Prioritized DDQN' and 'A2C'
+    # Choose between 'Supervised', 'DQN', 'DDQN', 'Prioritized DDQN' and 'Dueling DDQN', 'A2C'
     algorithm = 'A2C'
 
     # |DQN algorithm parameters|
@@ -386,7 +348,6 @@ def main():
 
     # Save all sorts of details about the execution in the log file
     if save_log_file:
-        log_execution_details(start_time, hyperparameters, result, model_path, monitor)
         evaluation_utils.log_execution_details(start_time, hyperparameters, result, model_path, monitor)
         print("\nLog file successfully updated")
 
