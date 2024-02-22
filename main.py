@@ -222,11 +222,11 @@ def main():
 
     # |Choose Algorithm|
     # Choose between 'Supervised', 'DQN', 'DDQN', 'Prioritized DDQN' and 'Dueling DDQN', 'A2C'
-    algorithm = 'A2C'
+    algorithm = 'Supervised'
 
     # |DQN algorithm parameters|
     episodes = 1000  # Total number of episodes for training the DQN agent
-    epochs = 1  # The number of times every episode should be 'retrained' | with dqn it can only be 1
+    epochs = 25  # The number of times every episode should be 'retrained' | with dqn it can only be 1
     gamma = 0.85  # Discount factor for future rewards in the Q-learning algorithm
     epsilon = 1  # Initial exploration rate in the epsilon-greedy strategy
     alpha = 0.0001  # Learning rate, determining how much new information overrides old information
