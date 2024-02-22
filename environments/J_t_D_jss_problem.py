@@ -134,13 +134,13 @@ class J_t_D_JSSProblem(GenericEnvironment):
             #    print(f"Action: {action}")
             #    print(f"Next State: {next_state}")
 
-            reward = s_zeros
+            reward = np.count_nonzero(next_tasks[0:self.max_numb_of_tasks] == 0)
 
             # penalty for uneven distribution of tasks
             reward -= (util.current_worst(self.current_cumulative_machines) -
                        util.assumed_optimal(self.current_cumulative_machines))
 
-            if sum(state[0]) == 0:
+            if sum(next_tasks) == 0:
                 reward += 100
 
             return reward

@@ -38,7 +38,7 @@ class GenericEnvironment:
 
     def action_to_int(self, action):
         # Find the index of `action` in the `self.actions` numpy array
-        index = np.where(self.actions == action)[0]
+        index = np.where((self.actions == action).all(axis=1))[0]
         if index.size > 0:
             return index[0]
         else:

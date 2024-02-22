@@ -34,6 +34,7 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
         self.result = np.zeros(self.numb_of_tasks, dtype=int)
 
         self.done_flag = False
+        self.count = 0
 
         # Generate possible actions
         actions = np.array([[task, i] for task in range(self.max_numb_of_tasks) for i in range(len(self.result))])
@@ -47,11 +48,13 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
         self.numb_of_tasks = len(self.tasks)
         self.result = np.zeros(self.numb_of_tasks, dtype=int)
         self.done_flag = False
+        self.count = 0
         return np.array([self.tasks, self.result])
 
     def get_specific_state_list(self, list_):
         # Function to get a specific state based on provided tasks
         self.done_flag = False
+        self.count = 0
         return self.get_specific_state(list_[0])
 
     def get_start_state(self, num_episode: int):
@@ -59,6 +62,7 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
         self.tasks = data_generation.get_start_state(self.env_name, self.numb_of_tasks, num_episode, self.dir_name)[0]
         self.result = np.zeros((self.numb_of_tasks,), dtype=int)
         self.done_flag = False
+        self.count = 0
         return np.array([self.tasks, self.result])
 
     def done(self, state):
@@ -84,7 +88,7 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
     def get_correct_actions(self, state):
         correct_actions = list()
         # Action selection and masking
-        possible_actions, impossible_actions = self.get_possible_actions(state)
+        possible_actions, impossible_actions = self.get_possible_actions(state, index=False)
         if len(possible_actions) == 0:
             return correct_actions
         for possible_action in possible_actions:
@@ -95,16 +99,23 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
     def get_reward(self, state, action, next_state):
         current_f = state[0][action[0]]
 
+        if self.count > len(state[0]):
+            print(f"We have passed {len(state[0])} iterations, and are now at {self.count}")
+            print(f"State: {state}")
+            print(f"Action: {action}")
+            print(f"Next State: {next_state}")
+
         # Function to calculate reward based on current state, action, and next state
         if sum(sum(s) for s in state) != sum((sum(ns) for ns in next_state)) \
                 or np.count_nonzero(state[1] == 0) != (np.count_nonzero(next_state[1] == 0)+1)\
                 or current_f == 0:
             self.done_flag = True
-            return -10
+            return -100
+
         before_position = state[1][0:action[1]]
         after_position = state[1][action[1]+1:len(state[1])]
-        # reward = np.count_nonzero(next_state[1] != 0)
-        reward = 0
+        reward = np.count_nonzero(next_state[1] != 0)
+        # reward = 0
 
         if len(before_position) > 0:
             if max(before_position) <= current_f:
@@ -113,10 +124,15 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
             if min(after_position) >= current_f or max(after_position) == 0:
                 reward += 2
 
+        if sum(next_state[0]) == 0:
+            reward += 100
+
         return reward
 
     def get_next_state(self, state, action):
         # Function to determine the next state based on the current state and action
+        self.count += 1
+
         next_state = state.copy()
 
         next_state[1][action[1]] = next_state[0][action[0]]
@@ -124,30 +140,26 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
         self.result = next_state[1]
         return next_state
 
-    def get_possible_actions(self, state):
+    def get_possible_actions(self, state, index=True):
         # Function to determine possible actions in the current state
         possible_actions = []
         impossible_actions = []
 
-        for task in range(self.max_numb_of_tasks):
-            if len(state[0]) <= task:
-                for i in range(self.max_numb_of_tasks):
-                    impossible_actions.append([task, i])
-            else:
-                if state[0][task] != 0:
-                    for i in range(self.max_numb_of_tasks):
-                        if len(state[1]) > i:
-                            if state[1][i] == 0:
-                                possible_actions.append([task, i])
-                            else:
-                                impossible_actions.append([task, i])
-                        else:
-                            impossible_actions.append([task, i])
+        i = 0
+        for action in self.actions:
+            if state[1][action[1]] == 0 or action[1] == -1:
+                if index:
+                    possible_actions.append(i)
                 else:
-                    for i in range(self.max_numb_of_tasks):
-                        impossible_actions.append([task, i])
+                    possible_actions.append(action)
+            else:
+                if index:
+                    impossible_actions.append(i)
+                else:
+                    impossible_actions.append(action)
+            i += 1
 
-        return possible_actions, impossible_actions
+        return np.array(possible_actions), np.array(impossible_actions)
 
     def pad_state(self, state):
         if len(state[0]) == self.max_numb_of_tasks:
