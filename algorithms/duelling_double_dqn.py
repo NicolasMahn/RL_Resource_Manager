@@ -3,20 +3,17 @@ from tensorflow import keras
 from tqdm import tqdm
 
 from resources import util
-from .prioritizing_replay_buffer import PrioritizedReplayBuffer
-from .create_model import create_dqn_model
+from .replay_buffer import ReplayBuffer
+from .create_model import create_dueling_dqn_model
 
 # Random number generators
 rnd = np.random.random
 randint = np.random.randint
 
-verbose = 0
 
-
-def prioritized_ddqn(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_epsilon, rb_alpha, rb_beta, rb_beta_end,
-                     batch_size, update_target_network, get_pretrained_dqn=False, progress_bar=True):
+def duelling_ddqn(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_epsilon, batch_size, update_target_network,
+                  get_pretrained_dqn=False, progress_bar=True):
     fitness_curve = np.zeros(episodes)
-    beta_increment_per_sampling = (rb_beta_end - rb_beta) / episodes
 
     # Initialize dqn_input and dqn_target with the correct shapes
     dqn_input = np.zeros((batch_size,) + tuple(env.dimensions))
@@ -27,7 +24,7 @@ def prioritized_ddqn(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_ep
         progress_bar = tqdm(total=episodes, unit='episode')
 
     # Initialize DQN and target models
-    dqn_model = create_dqn_model(env.dimensions, len(env.actions), alpha)
+    dqn_model = create_dueling_dqn_model(env.dimensions, len(env.actions), alpha)
     target_dqn_model = keras.models.clone_model(dqn_model)
     target_dqn_model.set_weights(dqn_model.get_weights())
 
@@ -36,7 +33,7 @@ def prioritized_ddqn(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_ep
     pretrained_dqn_model.set_weights(dqn_model.get_weights())
 
     # Create Replay Buffer
-    replay_buffer = PrioritizedReplayBuffer(10000, rb_alpha)
+    replay_buffer = ReplayBuffer(10000)
 
     # Main training loop
     for episode in range(episodes):
@@ -54,14 +51,15 @@ def prioritized_ddqn(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_ep
                 print("PROBLEM: No action possible")
                 break
 
-            actual_q_values = dqn_model.predict(np.array([state]), verbose=0)[0]
-            q_values = actual_q_values.copy()
-
             # Epsilon-greedy policy
             if rnd() < epsilon:
                 action_index = possible_actions[randint(0, len(possible_actions))]
             else:
-
+                # Get Q-values for all actions from DQN
+                dqn_prediction = dqn_model.predict(np.array([state]), verbose=0)[0]
+                values = dqn_prediction[0]
+                advantage = dqn_prediction[1]
+                q_values = np.array(values) + (np.array(advantage) - np.mean(advantage))
                 if len(impossible_actions) > 0:
                     q_values[impossible_actions] = -1e6  # Mask with a large negative value
                 action_index = util.argmax(q_values)
@@ -74,49 +72,45 @@ def prioritized_ddqn(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_ep
             reward = env.get_reward(state, action, next_state)
             return_ += reward
 
-            # In Double DQN the q_values are updated with the target and the actual model
-            next_q_values_from_model = dqn_model.predict(np.array([next_state]), verbose=verbose)[0]
-            # Get the Q-values for the next state from the target model
-            next_q_values = target_dqn_model.predict(np.array([next_state]), verbose=verbose)[0]
-
-            # Calculate the updated Q-value for the taken action
-            q_values = actual_q_values.copy()
-            q_value = q_values[action_index]
-            next_q_value = next_q_values[np.argmax(next_q_values_from_model)]  # the best next q value
-            td_error = (reward + gamma * next_q_value) - q_value
-            q_value = td_error
-            q_values[action_index] = q_value
-
             # Store experience to the replay buffer
-            replay_buffer.add(state, action_index, reward, next_state, td_error)
+            replay_buffer.push(state, action, reward, next_state)
 
             # Start training when there are enough experiences in the buffer
             if len(replay_buffer) > batch_size:
-                b_states, b_actions, b_rewards, b_next_states, idxs = replay_buffer.sample(batch_size, rb_beta)
 
-                q_values_batch = target_dqn_model.predict(b_states, verbose=0)
-                next_q_values_batch = target_dqn_model.predict(b_next_states, verbose=0)
-                next_q_values_model_batch = dqn_model.predict(b_next_states, verbose=0)
+                batch = replay_buffer.sample(batch_size)
 
-                for i, (b_state, b_action, b_reward, b_next_state, idx) in \
-                        enumerate(zip(b_states, b_actions, b_rewards, b_next_states, idxs)):
+                states = np.array([b_state for b_state, _, _, _ in batch])
+                next_states = np.array([b_next_state for _, _, _, b_next_state in batch])
+
+                dqn_prediction = dqn_model.predict(states, verbose=0)
+                next_dqn_prediction_model = dqn_model.predict(next_states, verbose=0)
+                next_dqn_prediction = target_dqn_model.predict(next_states, verbose=0)
+
+                for i, (b_state, b_action, b_reward, b_next_state) in enumerate(batch):
                     # Get the Q-values of the state, and next state from the target model
-                    q_values = q_values_batch[i]
-                    next_q_values = next_q_values_batch[i]
-                    next_q_values_model = next_q_values_model_batch[i]
+                    values = dqn_prediction[i][0]
+                    advantage = dqn_prediction[i][1]
+                    q_values = np.array(values) + (np.array(advantage) - np.mean(advantage))
+
+                    values = next_dqn_prediction[i][0]
+                    advantage = next_dqn_prediction[i][1]
+                    next_q_values = np.array(values) + (np.array(advantage) - np.mean(advantage))
+
+                    values = next_dqn_prediction_model[i][0]
+                    advantage = next_dqn_prediction_model[i][1]
+                    next_q_values_model = np.array(values) + (np.array(advantage) - np.mean(advantage))
 
                     # Calculate the updated Q-value for the taken action
                     q_value = q_values[b_action]
                     next_q_value = next_q_values[np.argmax(next_q_values_model)]
-                    td_error = (b_reward + gamma * next_q_value) - q_value
-
-                    replay_buffer.update(idx, td_error)
-                    q_values[b_action] = td_error
+                    q_value = (b_reward + gamma * next_q_value) - q_value
+                    q_values[b_action] = q_value
 
                     dqn_input[i] = np.array(state)
-                    dqn_target[i] = q_values
+                    # dqn_target[i] = ?
 
-                dqn_model.fit(np.array(dqn_input), np.array(dqn_target), verbose=verbose, use_multiprocessing=True,
+                dqn_model.fit(np.array(dqn_input), np.array(dqn_target), verbose=0, use_multiprocessing=True,
                               batch_size=batch_size)
 
             # Update state
@@ -133,9 +127,6 @@ def prioritized_ddqn(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_ep
 
         # Epsilon decay
         epsilon = max(min_epsilon, epsilon * epsilon_decay)
-
-        # Beta encay
-        rb_beta = min(rb_beta_end, rb_beta + beta_increment_per_sampling)
 
         # Update the progress bar
         if progress_bar:

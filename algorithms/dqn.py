@@ -94,7 +94,8 @@ def dqn(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_epsilon, batch_
                     dqn_input[i] = np.array(state)
                     dqn_target[i] = q_values
 
-                dqn_model.fit(np.array(dqn_input), np.array(dqn_target), verbose=0, use_multiprocessing=True,
+                dqn_model.fit(np.array(dqn_input), np.array(dqn_target),
+                              verbose=0, use_multiprocessing=True,
                               batch_size=batch_size)
 
             # Update state

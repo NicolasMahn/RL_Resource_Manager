@@ -110,7 +110,7 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
                 or np.count_nonzero(state[1] == 0) != (np.count_nonzero(next_state[1] == 0)+1)\
                 or current_f == 0:
             self.done_flag = True
-            return -100
+            return -10
 
         before_position = state[1][0:action[1]]
         after_position = state[1][action[1]+1:len(state[1])]
@@ -125,7 +125,7 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
                 reward += 2
 
         if sum(next_state[0]) == 0:
-            reward += 100
+            reward += 10
 
         return reward
 

@@ -63,13 +63,12 @@ class PrioritizedReplayBuffer:
     def _get_priority(self, td_error):
         return (np.abs(td_error) + 1e-5) ** self.alpha
 
-    def add(self, dqn_input_sample, dqn_target_sample, action, reward, next_state, td_error):
+    def add(self, state, action, reward, next_state, td_error):
         priority = self._get_priority(td_error)
-        self.tree.add(priority, (dqn_input_sample, dqn_target_sample, action, reward, next_state,))
+        self.tree.add(priority, (state, action, reward, next_state))
 
     def sample(self, batch_size, beta=0.4):
-        dqn_input = []
-        dqn_target = []
+        states = []
         actions = []
         rewards = []
         next_states = []
@@ -83,18 +82,17 @@ class PrioritizedReplayBuffer:
             s = random.uniform(a, b)
             (idx, p, data) = self.tree.get(s)
             priorities.append(p)
-            dqn_input.append(data[0])
-            dqn_target.append(data[1])
-            actions.append(data[2])
-            rewards.append(data[3])
-            next_states.append(data[4])
+            states.append(data[0])
+            actions.append(data[1])
+            rewards.append(data[2])
+            next_states.append(data[3])
             idxs.append(idx)
 
         sampling_probabilities = priorities / self.tree.total_priority()
         is_weight = np.power(self.tree.total_priority() * sampling_probabilities, -beta)
         is_weight /= is_weight.max()
 
-        return dqn_input, dqn_target, actions, rewards, next_states, idxs
+        return np.array(states), np.array(actions), np.array(rewards), np.array(next_states), np.array(idxs)
 
     def update(self, idx, error):
         priority = self._get_priority(error)
