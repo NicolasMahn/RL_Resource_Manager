@@ -82,10 +82,8 @@ def prioritized_ddqn(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_ep
             # Calculate the updated Q-value for the taken action
             q_values = actual_q_values.copy()
             q_value = q_values[action_index]
-            next_q_value = next_q_values[np.argmax(next_q_values_from_model)]  # the best next q value
+            next_q_value = next_q_values[util.argmax(next_q_values_from_model)]  # the best next q value
             td_error = (reward + gamma * next_q_value) - q_value
-            q_value = td_error
-            q_values[action_index] = q_value
 
             # Store experience to the replay buffer
             replay_buffer.add(state, action_index, reward, next_state, td_error)
@@ -108,7 +106,7 @@ def prioritized_ddqn(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_ep
                     # Calculate the updated Q-value for the taken action
                     q_value = q_values[b_action]
                     next_q_value = next_q_values[np.argmax(next_q_values_model)]
-                    td_error = (b_reward + gamma * next_q_value) - q_value
+                    td_error = b_reward + gamma * next_q_value - q_value
 
                     replay_buffer.update(idx, td_error)
                     q_values[b_action] = td_error

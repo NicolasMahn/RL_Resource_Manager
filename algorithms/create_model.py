@@ -49,24 +49,24 @@ def create_dueling_dqn_model(input_shape, num_actions, alpha):
 
 
 def create_actor_model(input_shape, num_actions, alpha):
-    model = keras.Sequential([
+    model = Sequential([
         Input(shape=input_shape),
         Dense(64, activation="relu"),
-        keras.layers.Dense(32, activation="relu"),
-        keras.layers.Flatten(),
-        keras.layers.Dense(num_actions, activation="softmax")
+        Dense(32, activation="relu"),
+        Flatten(),
+        Dense(num_actions, activation="softmax")
     ])
     model.compile(loss='categorical_crossentropy', optimizer=Adam(learning_rate=alpha))
     return model
 
 
 def create_critic_model(input_shape, alpha):
-    model = keras.Sequential([
-        keras.layers.Input(shape=input_shape),
-        keras.layers.Dense(64, activation="relu"),
-        keras.layers.Dense(32, activation="relu"),
-        keras.layers.Flatten(),
-        keras.layers.Dense(1, activation="linear")
+    model = Sequential([
+        Input(shape=input_shape),
+        Dense(64, activation="relu"),
+        Dense(32, activation="relu"),
+        Flatten(),
+        Dense(1, activation="linear")
     ])
     model.compile(loss='mse', optimizer=Adam(learning_rate=alpha))
     return model

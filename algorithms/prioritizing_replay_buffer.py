@@ -94,8 +94,8 @@ class PrioritizedReplayBuffer:
 
         return np.array(states), np.array(actions), np.array(rewards), np.array(next_states), np.array(idxs)
 
-    def update(self, idx, error):
-        priority = self._get_priority(error)
+    def update(self, idx, td_error):
+        priority = self._get_priority(td_error)
         self.tree.update(idx, priority)
 
     def __len__(self):

@@ -26,11 +26,34 @@ def a2c(env, episodes, gamma, alpha, progress_bar=True):
         # If not final state
         while not env.done(state):
 
+            # Step 1: Getting possible and impossible actions, masking them on the action probabilities
+            possible_actions, impossible_actions = \
+                env.get_possible_actions(state, index=True)
+
+            if len(possible_actions) == 0:
+                print("PROBLEM: No action possible")
+                break
+
             # choose an action
             action_probabilities = actor_model.predict(np.array([state]), verbose=0)[0]
 
-            # Choose an action based on the modified probabilities
-            action_index = np.random.choice(np.arange(len(action_probabilities)), p=action_probabilities)
+            masked_probabilities = np.copy(action_probabilities)
+            for idx in range(len(action_probabilities)):
+                if idx not in possible_actions:
+                    masked_probabilities[idx] = 0
+
+            # Step 2: Normalizing probabilities
+            masked_probabilities = np.copy(action_probabilities)
+            if np.sum(masked_probabilities) > 0:
+                normalized_probabilities = masked_probabilities / np.sum(masked_probabilities)
+            else:
+                print("Error: Sum of probabilities after masking is 0.")
+                # Handle the error appropriately. For example, you can choose a random action from possible actions
+                action_index = np.random.choice(possible_actions)
+                return action_index
+
+            # Step 3: Choosing an action based on the normalized probabilities
+            action_index = np.random.choice(np.arange(len(normalized_probabilities)), p=normalized_probabilities)
             action = env.actions[action_index]
 
             # Take action, observe reward and next state
@@ -42,7 +65,7 @@ def a2c(env, episodes, gamma, alpha, progress_bar=True):
             next_critic_value = critic_model.predict(np.array([next_state]), verbose=0)[0]
 
             target = reward + (gamma * next_critic_value * (1 - int(env.done(state))))
-            delta = target - critic_value
+            td_error = target - critic_value
 
             actions = np.zeros([1, len(env.actions)])
             actions[np.arange(1), action_index] = 1
@@ -51,7 +74,7 @@ def a2c(env, episodes, gamma, alpha, progress_bar=True):
             critic_model.fit(np.array([state]), target, verbose=0)
 
             # Update actor
-            actor_model.fit(np.array([state]), actions, sample_weight=delta.flatten(), verbose=0)
+            actor_model.fit(np.array([state]), actions, sample_weight=td_error.flatten(), verbose=0)
 
             # Update state
             state = next_state.copy()

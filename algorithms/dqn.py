@@ -88,7 +88,7 @@ def dqn(env, episodes, gamma, epsilon, alpha, epsilon_decay, min_epsilon, batch_
 
                     # Calculate the updated Q-value for the taken action
                     q_value = q_values[b_action]
-                    q_value = (b_reward + gamma * np.max(next_q_values)) - q_value
+                    q_value = b_reward + gamma * np.max(next_q_values) - q_value
                     q_values[b_action] = q_value
 
                     dqn_input[i] = np.array(state)

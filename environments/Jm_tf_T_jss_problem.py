@@ -56,9 +56,9 @@ class Jm_tf_T_JSSProblem(GenericEnvironment):
         self.is_task_ready = 9
 
         # Generate possible actions
-        actions = np.arange(0, self.numb_of_tasks).tolist()
+        actions = np.arange(0, self.numb_of_tasks)
 
-        self.history = list()
+        self.is_done = False
 
         # Call to superclass constructor
         super().__init__(dimensions=dimensions, actions=actions, start_state=np.zeros(max_numb_of_tasks))
@@ -66,11 +66,13 @@ class Jm_tf_T_JSSProblem(GenericEnvironment):
     def get_specific_state(self, ids, child_foreign_keys, nonpreemtive_flag, lead_time_total, lead_time_todo,
                            processing_time_total, processing_time_todo, deadline, done_flag, is_task_ready):
         # Function to get a specific state based on provided attributes
-        return list([ids, child_foreign_keys, nonpreemtive_flag, lead_time_total, lead_time_todo, processing_time_total,
-                     processing_time_todo, deadline, done_flag, is_task_ready])
+        self.is_done = False
+        return np.numpy([ids, child_foreign_keys, nonpreemtive_flag, lead_time_total, lead_time_todo, processing_time_total,
+                         processing_time_todo, deadline, done_flag, is_task_ready])
 
     def get_specific_state_list(self, list_):
         # Function to get a specific state based on provided attributes
+        self.is_done = False
         return self.get_specific_state(list_[self.ids], list_[self.child_foreign_keys], list_[self.nonpreemtive_flag],
                                        list_[self.lead_time_total], list_[self.lead_time_todo],
                                        list_[self.processing_time_total], list_[self.processing_time_todo],
@@ -78,11 +80,12 @@ class Jm_tf_T_JSSProblem(GenericEnvironment):
 
     def get_start_state(self, num_episode: int):
         temp_list = data_generation.get_start_state(self.env_name, self.numb_of_tasks, num_episode, self.dir_name)
+        self.is_done = False
         return temp_list
 
     def done(self, state):
         # Function to check if the current state is a terminal state
-        if sum(state[self.done_flag]) == self.numb_of_tasks:
+        if sum(state[self.done_flag]) == self.numb_of_tasks or self.is_done:
             return True
         else:
             return False
@@ -103,19 +106,19 @@ class Jm_tf_T_JSSProblem(GenericEnvironment):
     def get_reward(self, state, action, next_state):
         # Function to calculate the reward based on the state, action, and next state
 
-        action_index = self.action_to_int(action)
-        possible_actions, impossible_actions = self.get_possible_actions(state)
-        pa_index = [self.action_to_int(pa) for pa in possible_actions]
-        ia_index = [self.action_to_int(ia) for ia in impossible_actions]
+        possible_actions, impossible_actions = self.get_possible_actions(state, index=False)
 
         legal = True
 
+        if action in impossible_actions:
+            legal = False
+
         if legal:
-            if action_index in ia_index:
-                print("Action determined to be possible, although impossible")
-                print(f"State: {state}")
-                print(f"Action: {action}")
-                print(f"Next State: {next_state}")
+            #if action_index in ia_index:
+            #    print("Action determined to be possible, although impossible")
+            #    print(f"State: {state}")
+            #    print(f"Action: {action}")
+            #    print(f"Next State: {next_state}")
             min_time = float('inf')
             chosen_action = None
             for i, processing_time in enumerate(state[self.processing_time_todo]):
@@ -128,11 +131,13 @@ class Jm_tf_T_JSSProblem(GenericEnvironment):
             else:
                 return 1
         else:
-            if action_index in pa_index:
-                print("Action determined to be impossible, although possible")
-                print(f"State: {state}")
-                print(f"Action: {action}")
-                print(f"Next State: {next_state}")
+            #if action_index in pa_index:
+            #    print("Action determined to be impossible, although possible")
+            #    print(f"State: {state}")
+            #    print(f"Action: {action}")
+            #    print(f"Next State: {next_state}")
+            self.is_done = True
+            return -100
 
     def get_next_state(self, state, action):
         # Function to determine the next state based on the current state and action
@@ -187,20 +192,25 @@ class Jm_tf_T_JSSProblem(GenericEnvironment):
                     next_state[self.deadline][i] -= 1
             k += 1
 
-        self.history.append((state, action))
         return next_state
 
-    def get_possible_actions(self, state):
+    def get_possible_actions(self, state, index=True):
         # Function to determine possible actions in the current state
         possible_actions = []
         impossible_actions = []
 
-        for action in self.actions:
+        for i, (action) in enumerate(self.actions):
             if (state[self.is_task_ready][action] == 0) or (state[self.done_flag][action] == 1) or \
                     (state[self.lead_time_todo][action] != 0 and state[self.processing_time_todo][action] == 0):
-                impossible_actions.append(action)
+                if index:
+                    impossible_actions.append(i)
+                else:
+                    impossible_actions.append(action)
             else:
-                possible_actions.append(action)
+                if index:
+                    possible_actions.append(i)
+                else:
+                    possible_actions.append(action)
 
         return possible_actions, impossible_actions
 
@@ -211,7 +221,3 @@ class Jm_tf_T_JSSProblem(GenericEnvironment):
             s_padded = np.pad(s, (0, self.max_numb_of_tasks - len(s)), constant_values=-1)
             state_padded.append(s_padded)
         return state_padded
-
-    def get_result(self):
-        # Function to retrieve the history
-        return self.history

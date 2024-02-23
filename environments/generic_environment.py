@@ -38,6 +38,8 @@ class GenericEnvironment:
 
     def action_to_int(self, action):
         # Find the index of `action` in the `self.actions` numpy array
+        if str(type(action)) == "<class 'numpy.int64'>" or str(type(action)) == "<class 'int'>":
+            return action
         index = np.where((self.actions == action).all(axis=1))[0]
         if index.size > 0:
             return index[0]

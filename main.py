@@ -205,7 +205,7 @@ def main():
     # [J|nowait,t,gj=1|D]
     # [J,m=1|nowait,f,gj=1|T]
     # [J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|T]
-    environment = "[J,m=1|nowait,f,gj=1|T]"
+    environment = "[J,m=1|pmtn,nowait,tree,nj,t,f,gj=1|T]"
 
     # |Environment parameters|
     max_numb_of_machines = 3  # Maximum number of machines. Has to be 1 if m=1 for the environment
@@ -221,12 +221,12 @@ def main():
     high_numb_of_machines_preference = 0.8  # Specific to environment with more than one machine
 
     # |Choose Algorithm|
-    # Choose between 'Supervised', 'DQN', 'DDQN', 'Prioritized DDQN' and 'Dueling DDQN', 'A2C'
-    algorithm = 'Supervised'
+    # Choose between 'Supervised', 'DQN', 'DDQN', 'Prioritized DDQN', and 'A2C'
+    algorithm = 'Prioritized DDQN'
 
     # |DQN algorithm parameters|
-    episodes = 1000  # Total number of episodes for training the DQN agent
-    epochs = 25  # The number of times every episode should be 'retrained' | with dqn it can only be 1
+    episodes = 500  # Total number of episodes for training the DQN agent
+    epochs = 1  # The number of times every episode should be 'retrained' | with dqn it can only be 1
     gamma = 0.85  # Discount factor for future rewards in the Q-learning algorithm
     epsilon = 1  # Initial exploration rate in the epsilon-greedy strategy
     alpha = 0.0001  # Learning rate, determining how much new information overrides old information

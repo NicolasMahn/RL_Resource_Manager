@@ -171,7 +171,7 @@ class J_t_D_JSSProblem(GenericEnvironment):
             machines, tasks, step)
         return next_state
 
-    def get_possible_actions(self, state):
+    def get_possible_actions(self, state, index=True):
         # Function to determine possible actions in the current state
         possible_actions = []
         impossible_actions = []
@@ -192,14 +192,26 @@ class J_t_D_JSSProblem(GenericEnvironment):
                 else:
                     machine = machines[m]
                     if machine[step] <= 0 and possible:
-                        possible_actions.append([task, m])
+                        if not index:
+                            possible_actions.append([task, m])
+                        else:
+                            possible_actions.append(self.action_to_int([task, m]))
                     else:
-                        impossible_actions.append([task, m])
+                        if not index:
+                            impossible_actions.append([task, m])
+                        else:
+                            impossible_actions.append(self.action_to_int([task, m]))
 
         if any(machine[step] != 0 for machine in machines):
-            possible_actions.append([-1, -1])
+            if not index:
+                possible_actions.append([-1, -1])
+            else:
+                possible_actions.append(self.action_to_int([-1, -1]))
         else:
-            impossible_actions.append([-1, -1])
+            if not index:
+                impossible_actions.append([-1, -1])
+            else:
+                impossible_actions.append(self.action_to_int([-1, -1]))
 
         self.impossible_actions = impossible_actions
         self.possible_actions = possible_actions
