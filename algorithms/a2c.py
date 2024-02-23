@@ -41,16 +41,13 @@ def a2c(env, episodes, gamma, alpha, progress_bar=True):
             for idx in range(len(action_probabilities)):
                 if idx not in possible_actions:
                     masked_probabilities[idx] = 0
-
             # Step 2: Normalizing probabilities
             masked_probabilities = np.copy(action_probabilities)
             if np.sum(masked_probabilities) > 0:
                 normalized_probabilities = masked_probabilities / np.sum(masked_probabilities)
             else:
                 print("Error: Sum of probabilities after masking is 0.")
-                # Handle the error appropriately. For example, you can choose a random action from possible actions
-                action_index = np.random.choice(possible_actions)
-                return action_index
+
 
             # Step 3: Choosing an action based on the normalized probabilities
             action_index = np.random.choice(np.arange(len(normalized_probabilities)), p=normalized_probabilities)

@@ -160,17 +160,3 @@ class Jm_f_T_JSSProblem(GenericEnvironment):
             i += 1
 
         return np.array(possible_actions), np.array(impossible_actions)
-
-    def pad_state(self, state):
-        if len(state[0]) == self.max_numb_of_tasks:
-            return state
-
-        state_padded = list()
-        for s in state:
-            s_padded = np.pad(s, (0, self.max_numb_of_tasks - len(s)), constant_values=-1)
-            state_padded.append(s_padded)
-        return np.array(state_padded)
-
-    def get_result(self):
-        # Function to retrieve the result or final state of the environment
-        return np.array([r + 1 for r in self.result])
