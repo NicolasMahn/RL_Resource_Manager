@@ -1,4 +1,8 @@
 # Reinforcement Learning Resource Management
+
+> [!WARNING]
+> This was a research project and is no longer maintained. The versions in `requirements.txt` are pinned as they were in February 2024 and several of them, including Pillow, Keras, urllib3 and certifi, now have known security vulnerabilities. Moving to fixed versions means moving to Python 3.11+, TensorFlow with Keras 3 and newer Pillow, which this code has not been tested with. Use the pinned setup only to reproduce the results, in an isolated environment, and do not open untrusted images or model files with it.
+
 - [Abstract](#Abstract)
 - [Getting started](#getting-started)
 - [Software Structure](#Software-structure)
